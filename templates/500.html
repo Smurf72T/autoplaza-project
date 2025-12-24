@@ -1,0 +1,88 @@
+<!-- templates/500.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ошибка сервера (500) | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 text-center">
+            <!-- Иконка ошибки -->
+            <div class="mb-4">
+                <i class="fas fa-server fa-5x text-danger"></i>
+            </div>
+            
+            <!-- Заголовок -->
+            <h1 class="display-4 fw-bold text-muted mb-3">500</h1>
+            <h2 class="h3 mb-4">Ошибка сервера</h2>
+            
+            <!-- Описание -->
+            <div class="alert alert-danger" role="alert">
+                <h4 class="alert-heading">
+                    <i class="fas fa-exclamation-circle me-2"></i>Внутренняя ошибка сервера
+                </h4>
+                <p class="mb-0">
+                    Произошла техническая ошибка. Наша команда уже уведомлена и работает над решением проблемы.
+                </p>
+            </div>
+            
+            <!-- Что делать -->
+            <div class="row mt-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-redo-alt text-primary me-2"></i>Попробуйте позже
+                            </h5>
+                            <p class="card-text">
+                                Обновите страницу через несколько минут. Возможно, проблема будет решена.
+                            </p>
+                            <button onclick="window.location.reload()" class="btn btn-sm btn-outline-primary">
+                                Обновить страницу
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-headset text-primary me-2"></i>Свяжитесь с нами
+                            </h5>
+                            <p class="card-text">
+                                Если ошибка повторяется, сообщите нам об этом.
+                            </p>
+                            <a href="{% url 'core:contact' %}" class="btn btn-sm btn-outline-primary">
+                                Контакты поддержки
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Кнопки действий -->
+            <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-5">
+                <a href="{% url 'core:home' %}" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-home me-2"></i>На главную
+                </a>
+                <a href="javascript:history.back()" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-arrow-left me-2"></i>Вернуться назад
+                </a>
+            </div>
+            
+            <!-- Контактная информация -->
+            <div class="mt-5 pt-4 border-top">
+                <p class="text-muted small">
+                    <strong>Важно:</strong> Если вы заполняли форму на сайте, 
+                    рекомендуем скопировать введенные данные перед обновлением страницы.
+                </p>
+                <p class="text-muted small mb-0">
+                    Техническая поддержка: <a href="mailto:support@autoplaza.ru">support@autoplaza.ru</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

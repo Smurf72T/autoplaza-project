@@ -1,0 +1,336 @@
+<!-- templates/advertisements/ad_list.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Поиск автомобилей | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Заголовок и фильтры -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <h1 class="h2 mb-2">Поиск автомобилей</h1>
+            <p class="text-muted mb-0">Найдите свой идеальный автомобиль среди тысяч предложений</p>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+            {% if user.is_authenticated %}
+            <a href="{% url 'advertisements:ad_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Добавить объявление
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Основной фильтр -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'advertisements:ad_list' %}" id="filter-form">
+                <div class="row g-3">
+                    <!-- Марка -->
+                    <div class="col-md-3">
+                        <label for="brand" class="form-label">Марка</label>
+                        <select name="brand" id="brand-filter" class="form-select">
+                            <option value="">Все марки</option>
+                            {% for brand in brands %}
+                            <option value="{{ brand.slug }}"
+                                {% if request.GET.brand == brand.slug %}selected{% endif %}>
+                                {{ brand.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Модель -->
+                    <div class="col-md-3">
+                        <label for="model" class="form-label">Модель</label>
+                        <select name="model" id="model-filter" class="form-select"
+                                {% if not models %}disabled{% endif %}>
+                            <option value="">Все модели</option>
+                            {% if models %}
+                                {% for model in models %}
+                                <option value="{{ model.slug }}"
+                                    {% if request.GET.model == model.slug %}selected{% endif %}>
+                                    {{ model.name }}
+                                </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <!-- Цена -->
+                    <div class="col-md-2">
+                        <label for="min_price" class="form-label">Цена от</label>
+                        <div class="input-group">
+                            <input type="number" name="min_price" id="min_price" class="form-control"
+                                   placeholder="₽" value="{{ request.GET.min_price }}">
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="max_price" class="form-label">Цена до</label>
+                        <div class="input-group">
+                            <input type="number" name="max_price" id="max_price" class="form-control"
+                                   placeholder="₽" value="{{ request.GET.max_price }}">
+                        </div>
+                    </div>
+
+                    <!-- Кнопки -->
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="d-grid gap-2 w-100">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>Найти
+                            </button>
+                            <a href="{% url 'advertisements:ad_list' %}" class="btn btn-outline-secondary">Сбросить</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Расширенные фильтры -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <button class="btn btn-link text-decoration-none" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#advanced-filters">
+                <i class="fas fa-sliders-h me-1"></i> Расширенные фильтры
+                <i class="fas fa-chevron-down ms-1"></i>
+            </button>
+
+            <div class="collapse mt-3" id="advanced-filters">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Год выпуска -->
+                            <div class="col-md-3">
+                                <label class="form-label">Год от</label>
+                                <input type="number" name="min_year" class="form-control"
+                                       placeholder="1990" value="{{ request.GET.min_year }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Год до</label>
+                                <input type="number" name="max_year" class="form-control"
+                                       placeholder="{% now 'Y' %}" value="{{ request.GET.max_year }}">
+                            </div>
+
+                            <!-- Тип кузова -->
+                            <div class="col-md-3">
+                                <label class="form-label">Тип кузова</label>
+                                <select name="body_type" class="form-select">
+                                    <option value="">Все</option>
+                                    {% for body_type in body_types %}
+                                    <option value="{{ body_type }}"
+                                        {% if request.GET.body_type == body_type %}selected{% endif %}>
+                                        {{ body_type }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Тип топлива -->
+                            <div class="col-md-3">
+                                <label class="form-label">Тип топлива</label>
+                                <select name="fuel_type" class="form-select">
+                                    <option value="">Все</option>
+                                    {% for fuel_key, fuel_name in fuel_types %}
+                                    <option value="{{ fuel_key }}"
+                                        {% if request.GET.fuel_type == fuel_key %}selected{% endif %}>
+                                        {{ fuel_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Коробка передач -->
+                            <div class="col-md-3">
+                                <label class="form-label">Коробка передач</label>
+                                <select name="transmission" class="form-select">
+                                    <option value="">Все</option>
+                                    {% for trans_key, trans_name in transmission_types %}
+                                    <option value="{{ trans_key }}"
+                                        {% if request.GET.transmission == trans_key %}selected{% endif %}>
+                                        {{ trans_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Привод -->
+                            <div class="col-md-3">
+                                <label class="form-label">Привод</label>
+                                <select name="drive_type" class="form-select">
+                                    <option value="">Все</option>
+                                    {% for drive_key, drive_name in drive_types %}
+                                    <option value="{{ drive_key }}"
+                                        {% if request.GET.drive_type == drive_key %}selected{% endif %}>
+                                        {{ drive_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Пробег -->
+                            <div class="col-md-3">
+                                <label class="form-label">Пробег до</label>
+                                <div class="input-group">
+                                    <input type="number" name="max_mileage" class="form-control"
+                                           placeholder="км" value="{{ request.GET.max_mileage }}">
+                                </div>
+                            </div>
+
+                            <!-- Тип продавца -->
+                            <div class="col-md-3">
+                                <label class="form-label">Тип продавца</label>
+                                <select name="owner_type" class="form-select">
+                                    <option value="">Все</option>
+                                    <option value="private" {% if request.GET.owner_type == 'private' %}selected{% endif %}>
+                                        Частное лицо
+                                    </option>
+                                    <option value="dealer" {% if request.GET.owner_type == 'dealer' %}selected{% endif %}>
+                                        Дилер
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Сортировка и статистика -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="btn-group" role="group">
+                <a href="?sort=price&order=asc{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'order' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                   class="btn btn-outline-secondary {% if current_sort == 'price' and current_order == 'asc' %}active{% endif %}">
+                    Цена ↑
+                </a>
+                <a href="?sort=price&order=desc{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'order' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                   class="btn btn-outline-secondary {% if current_sort == 'price' and current_order == 'desc' %}active{% endif %}">
+                    Цена ↓
+                </a>
+                <a href="?sort=year&order=desc{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'order' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                   class="btn btn-outline-secondary {% if current_sort == 'year' and current_order == 'desc' %}active{% endif %}">
+                    Сначала новые
+                </a>
+                <a href="?sort=mileage&order=asc{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'order' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                   class="btn btn-outline-secondary {% if current_sort == 'mileage' %}active{% endif %}">
+                    Меньший пробег
+                </a>
+            </div>
+        </div>
+
+        <div>
+            <span class="badge bg-primary">Найдено: {{ page_obj.paginator.count|intcomma }}</span>
+        </div>
+    </div>
+
+    <!-- Результаты поиска -->
+    {% if page_obj %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-5">
+            {% for ad in page_obj %}
+            <div class="col">
+                {% include 'advertisements/partials/ad_card.html' with ad=ad %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if is_paginated %}
+            {% include 'includes/pagination.html' with page_obj=page_obj %}
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-4x text-muted mb-4"></i>
+            <h3 class="h4 mb-3">Объявления не найдены</h3>
+            <p class="text-muted mb-4">Попробуйте изменить параметры поиска</p>
+            <a href="{% url 'advertisements:ad_list' %}" class="btn btn-primary">
+                <i class="fas fa-redo me-2"></i>Сбросить фильтры
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // AJAX для загрузки моделей при выборе марки
+    const brandSelect = document.getElementById('brand-filter');
+    const modelSelect = document.getElementById('model-filter');
+
+    if (brandSelect && modelSelect) {
+        brandSelect.addEventListener('change', function() {
+            const brandSlug = this.value;
+
+            if (!brandSlug) {
+                modelSelect.innerHTML = '<option value="">Все модели</option>';
+                modelSelect.disabled = true;
+                return;
+            }
+
+            modelSelect.disabled = true;
+            modelSelect.innerHTML = '<option value="">Загрузка...</option>';
+
+            fetch(`/api/models/?brand=${brandSlug}`)
+                .then(response => response.json())
+                .then(data => {
+                    let options = '<option value="">Все модели</option>';
+                    data.forEach(model => {
+                        options += `<option value="${model.slug}">${model.name}</option>`;
+                    });
+
+                    modelSelect.innerHTML = options;
+                    modelSelect.disabled = false;
+
+                    // Восстанавливаем выбранное значение, если есть в GET параметрах
+                    const selectedModel = new URLSearchParams(window.location.search).get('model');
+                    if (selectedModel) {
+                        modelSelect.value = selectedModel;
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    modelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+                });
+        });
+
+        // Если при загрузке уже выбрана марка
+        if (brandSelect.value) {
+            brandSelect.dispatchEvent(new Event('change'));
+        }
+    }
+
+    // Сохранение состояния расширенных фильтров
+    const advancedFilters = document.getElementById('advanced-filters');
+    const filterToggle = document.querySelector('[data-bs-target="#advanced-filters"]');
+
+    // Проверяем, есть ли заполненные расширенные фильтры
+    const hasAdvancedFilters = {% if request.GET.min_year or request.GET.max_year or request.GET.body_type or request.GET.fuel_type or request.GET.transmission or request.GET.drive_type or request.GET.max_mileage or request.GET.owner_type %}true{% else %}false{% endif %};
+
+    if (hasAdvancedFilters) {
+        // Открываем расширенные фильтры
+        new bootstrap.Collapse(advancedFilters, { toggle: true });
+
+        // Меняем иконку
+        const icon = filterToggle.querySelector('.fa-chevron-down');
+        if (icon) {
+            icon.className = 'fas fa-chevron-up ms-1';
+        }
+    }
+
+    // Изменение иконки при раскрытии/скрытии
+    filterToggle.addEventListener('click', function() {
+        const icon = this.querySelector('.fa-chevron-down, .fa-chevron-up');
+        if (icon) {
+            icon.className = advancedFilters.classList.contains('show')
+                ? 'fas fa-chevron-up ms-1'
+                : 'fas fa-chevron-down ms-1';
+        }
+    });
+});
+</script>
+{% endblock %}

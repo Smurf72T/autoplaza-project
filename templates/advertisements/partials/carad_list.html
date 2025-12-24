@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Список объявлений</title>
+</head>
+<body>
+    <h1>Объявления о продаже автомобилей</h1>
+    <p>Это шаблон для отображения списка объявлений (carad_list.html).</p>
+
+    {% if object_list %}
+        <ul>
+        {% for ad in object_list %}
+            <li>
+                <h3>{{ ad.title }}</h3>
+                <p>Цена: {{ ad.price }} ₽</p>
+                <p>Город: {{ ad.city }}</p>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Объявлений пока нет.</p>
+    {% endif %}
+</body>
+</html>

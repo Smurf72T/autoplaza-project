@@ -1,0 +1,60 @@
+# Django
+*.pyc
+__pycache__/
+*.sqlite3
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.db
+*.sqlite3
+
+# Static files
+staticfiles/
+media/
+
+# Logs
+*.log
+logs/
+
+# Next.js / Frontend
+frontend/.next/
+frontend/node_modules/
+frontend/.turbo/
+frontend/.vercel/
+frontend/out/
+frontend/build/
+frontend/.env*.local
+frontend/.next/cache/
+
+# Coverage directory
+coverage/
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PyCharm
+.idea/
+*.iml
+
+# Temp files
+*.tmp
+*.temp

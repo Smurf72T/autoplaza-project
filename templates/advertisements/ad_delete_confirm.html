@@ -1,0 +1,176 @@
+<!-- templates/advertisements/ad_delete_confirm.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Удаление объявления | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <!-- Хлебные крошки -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'advertisements:ad_list' %}">Мои объявления</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Удаление</li>
+                </ol>
+            </nav>
+
+            <!-- Карточка подтверждения -->
+            <div class="card border-danger shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Подтверждение удаления
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <!-- Предупреждение -->
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-radiation-alt me-2"></i>Внимание!
+                        </h5>
+                        <p class="mb-0">
+                            Вы собираетесь удалить объявление. Это действие нельзя отменить.
+                        </p>
+                    </div>
+
+                    <!-- Информация об объявлении -->
+                    <div class="border rounded p-3 mb-4">
+                        <div class="row">
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                {% if ad.get_main_photo %}
+                                <img src="{{ ad.get_main_photo.thumbnail.url|default:ad.get_main_photo.image.url }}"
+                                     alt="{{ ad.title }}"
+                                     class="img-fluid rounded">
+                                {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                     style="height: 120px;">
+                                    <i class="fas fa-car fa-3x text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <h5 class="card-title">{{ ad.title }}</h5>
+                                <p class="card-text mb-2">
+                                    <strong>Цена:</strong> {{ ad.price|floatformat:0|intcomma }} ₽
+                                </p>
+                                <p class="card-text mb-2">
+                                    <strong>Год:</strong> {{ ad.year }}
+                                </p>
+                                <p class="card-text mb-2">
+                                    <strong>Пробег:</strong> {{ ad.mileage|floatformat:0|intcomma }} км
+                                </p>
+                                <p class="card-text mb-0">
+                                    <strong>Создано:</strong> {{ ad.created_at|date:"d.m.Y H:i" }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Статистика -->
+                    <div class="row text-center mb-4">
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small">Просмотров</div>
+                                <div class="h5 mb-0">{{ ad.views|default:0 }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small">В избранном</div>
+                                <div class="h5 mb-0">{{ ad.favorites_count|default:0 }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Форма удаления -->
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="confirm_text" class="form-label">
+                                Для подтверждения введите "УДАЛИТЬ" в поле ниже:
+                            </label>
+                            <input type="text"
+                                   class="form-control form-control-lg text-center"
+                                   id="confirm_text"
+                                   name="confirm_text"
+                                   placeholder="УДАЛИТЬ"
+                                   required
+                                   oninput="validateDelete(this)">
+                            <div class="form-text text-danger mt-1" id="confirm_error"></div>
+                        </div>
+
+                        <!-- Кнопки -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <button type="submit"
+                                    class="btn btn-danger btn-lg px-4"
+                                    id="delete_btn"
+                                    disabled>
+                                <i class="fas fa-trash-alt me-2"></i>Да, удалить объявление
+                            </button>
+                            <a href="{% url 'advertisements:ad_detail' ad.slug %}"
+                               class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-times me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Подсказка -->
+                <div class="card-footer bg-light">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-info-circle text-primary"></i>
+                        </div>
+                        <div class="col">
+                            <small class="text-muted">
+                                Вместо удаления вы можете <a href="{% url 'advertisements:ad_edit' ad.slug %}">отредактировать</a>
+                                объявление или сделать его неактивным в настройках.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Валидация подтверждения удаления
+function validateDelete(input) {
+    const confirmText = input.value.trim().toUpperCase();
+    const deleteBtn = document.getElementById('delete_btn');
+    const errorDiv = document.getElementById('confirm_error');
+
+    if (confirmText === 'УДАЛИТЬ') {
+        deleteBtn.disabled = false;
+        errorDiv.textContent = '';
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+    } else {
+        deleteBtn.disabled = true;
+        errorDiv.textContent = 'Введите слово "УДАЛИТЬ" для подтверждения';
+        input.classList.remove('is-valid');
+        input.classList.add('is-invalid');
+    }
+}
+
+// Предотвращение случайного закрытия
+let formSubmitted = false;
+window.addEventListener('beforeunload', function (e) {
+    if (!formSubmitted) {
+        e.preventDefault();
+        e.returnValue = 'Вы не сохранили изменения. Уверены, что хотите уйти?';
+    }
+});
+
+document.querySelector('form').addEventListener('submit', function() {
+    formSubmitted = true;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,136 @@
+<!-- templates/advertisements/partials/ad_card.html -->
+{% load humanize %}
+{% load static %}
+
+<div class="card ad-card h-100">
+    <!-- Фотография -->
+    <div class="ad-card-img position-relative">
+        {% if ad.get_main_photo %}
+        <a href="{% url 'advertisements:ad_detail' ad.slug %}">
+            <img src="{{ ad.get_main_photo.thumbnail.url|default:ad.get_main_photo.image.url }}"
+                 alt="{{ ad.title }}"
+                 class="card-img-top"
+                 loading="lazy">
+        </a>
+        {% else %}
+        <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+             style="height: 200px;">
+            <div class="text-center">
+                <i class="fas fa-car fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-0">Нет фото</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Бейджи -->
+        <div class="position-absolute top-0 start-0 p-2">
+            {% if ad.is_new %}
+            <span class="badge bg-success">Новое</span>
+            {% endif %}
+            {% if ad.is_negotiable %}
+            <span class="badge bg-warning">Торг</span>
+            {% endif %}
+        </div>
+
+        <!-- Добавить в избранное -->
+        {% if user.is_authenticated %}
+        <div class="position-absolute top-0 end-0 p-2">
+            <button class="btn btn-sm btn-light favorite-btn"
+                    onclick="toggleFavoriteCard({{ ad.id }}, this)"
+                    title="Добавить в избранное">
+                <i class="far fa-heart"></i>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Содержимое карточки -->
+    <div class="card-body d-flex flex-column">
+        <!-- Цена -->
+        <div class="mb-2">
+            <h5 class="card-title text-primary mb-0">{{ ad.price|intcomma }} ₽</h5>
+        </div>
+
+        <!-- Заголовок -->
+        <h6 class="card-subtitle mb-2">
+            <a href="{% url 'advertisements:ad_detail' ad.slug %}" class="text-dark text-decoration-none">
+                {{ ad.title|truncatechars:50 }}
+            </a>
+        </h6>
+
+        <!-- Основная информация -->
+        <div class="mb-3">
+            <p class="card-text small mb-1">
+                <i class="fas fa-car me-1 text-muted"></i>
+                {% if ad.model.brand %}
+                <a href="{% url 'cars:brand_detail' ad.model.brand.slug %}" class="text-decoration-none">
+                    {{ ad.model.brand.name }}
+                </a>
+                {% endif %}
+                {{ ad.model.name }}
+            </p>
+            <p class="card-text small mb-1">
+                <i class="fas fa-calendar me-1 text-muted"></i>
+                {{ ad.year }} год
+                <span class="mx-2">•</span>
+                <i class="fas fa-tachometer-alt me-1 text-muted"></i>
+                {{ ad.mileage|intcomma }} км
+            </p>
+            {% if ad.fuel_type %}
+            <p class="card-text small mb-1">
+                <i class="fas fa-gas-pump me-1 text-muted"></i>
+                {{ ad.get_fuel_type_display }}
+                {% if ad.transmission %}
+                <span class="mx-2">•</span>
+                <i class="fas fa-cog me-1 text-muted"></i>
+                {{ ad.get_transmission_display }}
+                {% endif %}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Локация -->
+        <div class="mt-auto">
+            <p class="card-text small text-muted mb-1">
+                <i class="fas fa-map-marker-alt me-1"></i>
+                {{ ad.city }}, {{ ad.region }}
+            </p>
+            <p class="card-text small text-muted">
+                <i class="far fa-clock me-1"></i>
+                {{ ad.created_at|timesince }} назад
+                {% if ad.views %}
+                <span class="mx-2">•</span>
+                <i class="far fa-eye me-1"></i>
+                {{ ad.views }}
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функция для добавления в избранное из карточки
+function toggleFavoriteCard(adId, element) {
+    fetch(`/api/favorites/${adId}/toggle/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const icon = element.querySelector('i');
+        if (data.status === 'added') {
+            icon.className = 'fas fa-heart text-danger';
+            element.classList.add('active');
+        } else if (data.status === 'removed') {
+            icon.className = 'far fa-heart';
+            element.classList.remove('active');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+</script>

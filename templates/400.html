@@ -1,0 +1,364 @@
+<!-- templates/400.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Некорректный запрос (400) | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 text-center">
+            <!-- Иконка ошибки -->
+            <div class="mb-4">
+                <i class="fas fa-exclamation-circle fa-5x text-warning"></i>
+            </div>
+
+            <!-- Заголовок -->
+            <h1 class="display-4 fw-bold text-muted mb-3">400</h1>
+            <h2 class="h3 mb-4">Некорректный запрос</h2>
+
+            <!-- Описание -->
+            <div class="alert alert-info" role="alert">
+                <h4 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>Сервер не смог обработать ваш запрос
+                </h4>
+                <p class="mb-0">
+                    Запрос содержит синтаксическую ошибку или некорректные данные.
+                </p>
+            </div>
+
+            <!-- Частые причины -->
+            <div class="card border-0 shadow-sm mb-5">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-search me-2"></i>Возможные причины ошибки:
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex border rounded p-3 h-100">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-danger rounded-circle p-2">1</span>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-2">Неверные данные формы</h6>
+                                    <p class="small text-muted mb-0">
+                                        Проверьте заполнение всех обязательных полей. Возможно, введены некорректные символы или значения.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="d-flex border rounded p-3 h-100">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-danger rounded-circle p-2">2</span>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-2">Просроченная сессия</h6>
+                                    <p class="small text-muted mb-0">
+                                        Ваша сессия могла истечь. Попробуйте обновить страницу и повторить действие.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="d-flex border rounded p-3 h-100">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-danger rounded-circle p-2">3</span>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-2">Некорректный URL</h6>
+                                    <p class="small text-muted mb-0">
+                                        Проверьте правильность введенного адреса. Возможно, в нем есть ошибки.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="d-flex border rounded p-3 h-100">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-danger rounded-circle p-2">4</span>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-2">Слишком большой файл</h6>
+                                    <p class="small text-muted mb-0">
+                                        При загрузке файлов убедитесь, что их размер не превышает допустимый лимит.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Шаги по устранению -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-wrench me-2"></i>Как исправить:
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <ol class="list-group list-group-numbered border-0">
+                                <li class="list-group-item d-flex justify-content-between align-items-start border-0">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold">Обновите страницу</div>
+                                        Нажмите F5 или кнопку "Обновить" в браузере
+                                    </div>
+                                    <button onclick="window.location.reload()" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-redo"></i> Обновить
+                                    </button>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-start border-0">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold">Очистите кэш браузера</div>
+                                        Иногда старые данные мешают корректной работе
+                                    </div>
+                                    <button onclick="clearCache()" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-trash-alt"></i> Очистить
+                                    </button>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-start border-0">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold">Проверьте введенные данные</div>
+                                        Убедитесь, что все поля заполнены корректно
+                                    </div>
+                                    <button onclick="checkFormData()" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-check"></i> Проверить
+                                    </button>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-start border-0">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold">Попробуйте другой браузер</div>
+                                        Иногда проблема связана с конкретным браузером
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Форма обратной связи -->
+            <div class="card border-0 shadow-sm mb-5">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="fas fa-bug me-2"></i>Сообщить об ошибке
+                    </h5>
+                    <p class="card-text mb-3">
+                        Если ошибка повторяется, сообщите нам об этом. Мы постараемся исправить ее как можно скорее.
+                    </p>
+                    <form id="errorReportForm">
+                        <div class="mb-3">
+                            <label for="errorDescription" class="form-label">Описание проблемы:</label>
+                            <textarea class="form-control" id="errorDescription" rows="3"
+                                      placeholder="Опишите, что вы делали перед появлением ошибки..."
+                                      required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userEmail" class="form-label">Ваш email (для ответа):</label>
+                            <input type="email" class="form-control" id="userEmail"
+                                   value="{{ user.email|default:'' }}"
+                                   placeholder="email@example.com">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Отправить отчет
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Быстрые ссылки -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center mb-4">
+                <a href="{% url 'core:home' %}" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-home me-2"></i>На главную
+                </a>
+                <a href="{% url 'advertisements:ad_list' %}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-car me-2"></i>Все объявления
+                </a>
+                <a href="{% url 'core:contact' %}" class="btn btn-outline-secondary btn-lg px-4">
+                    <i class="fas fa-headset me-2"></i>Поддержка
+                </a>
+            </div>
+
+            <!-- Техническая информация -->
+            <div class="mt-4 pt-3 border-top">
+                <details>
+                    <summary class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-code me-2"></i>Техническая информация
+                    </summary>
+                    <div class="mt-3 p-3 bg-light rounded text-start">
+                        <p class="small text-muted mb-1">
+                            <strong>Время ошибки:</strong> <span id="errorTime"></span>
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <strong>URL:</strong> {{ request.path }}
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <strong>Метод:</strong> {{ request.method }}
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <strong>Пользователь:</strong> {{ user.username|default:"Не авторизован" }}
+                        </p>
+                        <p class="small text-muted mb-0">
+                            <strong>User-Agent:</strong> <small>{{ request.META.HTTP_USER_AGENT|truncatechars:100 }}</small>
+                        </p>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Устанавливаем время ошибки
+document.getElementById('errorTime').textContent = new Date().toLocaleString('ru-RU');
+
+// Очистка кэша (симуляция)
+function clearCache() {
+    if (confirm('Очистить кэш браузера? После этого может потребоваться повторный вход на сайт.')) {
+        // В реальном приложении здесь был бы запрос на очистку сессии
+        localStorage.removeItem('formData');
+        sessionStorage.clear();
+
+        showNotification('Кэш очищен. Обновите страницу.', 'success');
+
+        // Обновляем через 2 секунды
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    }
+}
+
+// Проверка данных формы
+function checkFormData() {
+    // Проверяем, есть ли сохраненные данные формы
+    const savedData = localStorage.getItem('formData');
+    if (savedData) {
+        try {
+            const data = JSON.parse(savedData);
+            let message = 'Найдены сохраненные данные формы:\n\n';
+
+            for (const [key, value] of Object.entries(data)) {
+                if (value && value.toString().trim() !== '') {
+                    message += `• ${key}: ${value}\n`;
+                }
+            }
+
+            if (confirm(message + '\nХотите восстановить эти данные?')) {
+                // В реальном приложении здесь было бы восстановление данных
+                showNotification('Данные готовы к восстановлению', 'info');
+            }
+        } catch (e) {
+            console.error('Error parsing saved data:', e);
+        }
+    } else {
+        showNotification('Сохраненных данных не найдено', 'info');
+    }
+}
+
+// Отправка отчета об ошибке
+document.getElementById('errorReportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const description = document.getElementById('errorDescription').value;
+    const email = document.getElementById('userEmail').value;
+
+    if (!description.trim()) {
+        showNotification('Введите описание проблемы', 'warning');
+        return;
+    }
+
+    // Симуляция отправки
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Отправка...';
+
+    setTimeout(() => {
+        // В реальном приложении здесь был бы AJAX-запрос
+        console.log('Error report:', { description, email, path: window.location.pathname });
+
+        showNotification('Отчет об ошибке отправлен. Спасибо!', 'success');
+
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        e.target.reset();
+    }, 1500);
+});
+
+// Всплывающие уведомления
+function showNotification(message, type = 'info') {
+    const alertClass = {
+        'success': 'alert-success',
+        'error': 'alert-danger',
+        'warning': 'alert-warning',
+        'info': 'alert-info'
+    }[type] || 'alert-info';
+
+    const alert = document.createElement('div');
+    alert.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(alert);
+
+    setTimeout(() => {
+        if (alert.parentNode) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 5000);
+}
+
+// Автоматическое сохранение данных формы (для предотвращения потери)
+document.addEventListener('DOMContentLoaded', function() {
+    // Сохраняем данные форм при изменении
+    document.querySelectorAll('input, textarea, select').forEach(element => {
+        element.addEventListener('input', function() {
+            const formData = {};
+            document.querySelectorAll('input, textarea, select').forEach(el => {
+                if (el.name && el.value) {
+                    formData[el.name] = el.value;
+                }
+            });
+
+            if (Object.keys(formData).length > 0) {
+                localStorage.setItem('formData', JSON.stringify(formData));
+            }
+        });
+    });
+
+    // Восстанавливаем данные при загрузке страницы
+    const savedData = localStorage.getItem('formData');
+    if (savedData) {
+        try {
+            const data = JSON.parse(savedData);
+            for (const [name, value] of Object.entries(data)) {
+                const element = document.querySelector(`[name="${name}"]`);
+                if (element && !element.value) {
+                    element.value = value;
+                }
+            }
+        } catch (e) {
+            console.error('Error restoring form data:', e);
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,961 @@
+<!-- templates/users/profile.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Мой профиль | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Левая колонка: меню профиля -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm mb-4">
+                <!-- Аватар и информация -->
+                <div class="card-body text-center">
+                    <!-- Аватар -->
+                    <div class="mb-3">
+                        {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}"
+                             alt="{{ user.get_full_name|default:user.username }}"
+                             class="rounded-circle"
+                             style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto"
+                             style="width: 100px; height: 100px; font-size: 2rem;">
+                            {{ user.get_full_name|slice:":1"|default:user.username|slice:":1"|upper }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Имя -->
+                    <h5 class="h6 mb-1">{{ user.get_full_name|default:user.username }}</h5>
+
+                    <!-- Email -->
+                    <p class="text-muted small mb-3">{{ user.email }}</p>
+
+                    <!-- Статистика -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <div class="h6 mb-0">{{ user_ads_count|default:0 }}</div>
+                                <small class="text-muted">Объявления</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <div class="h6 mb-0">{{ user_favorites_count|default:0 }}</div>
+                                <small class="text-muted">Избранное</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Рейтинг (если есть) -->
+                    {% if user.rating %}
+                    <div class="mb-3">
+                        <div class="badge bg-warning">
+                            <i class="fas fa-star"></i> {{ user.rating|floatformat:1 }}
+                        </div>
+                        <small class="text-muted d-block">Рейтинг продавца</small>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Навигация -->
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'users:profile' %}"
+                       class="list-group-item list-group-item-action {% if active_tab == 'overview' %}active{% endif %}">
+                        <i class="fas fa-home me-2"></i>Обзор
+                    </a>
+                    <a href="{% url 'users:profile_edit' %}"
+                       class="list-group-item list-group-item-action {% if active_tab == 'edit' %}active{% endif %}">
+                        <i class="fas fa-user-edit me-2"></i>Редактировать профиль
+                    </a>
+                    <a href="{% url 'advertisements:my_ads' %}"
+                       class="list-group-item list-group-item-action {% if active_tab == 'advertisements' %}active{% endif %}">
+                        <i class="fas fa-car me-2"></i>Мои объявления
+                    </a>
+                    <a href="{% url 'advertisements:favorites' %}"
+                       class="list-group-item list-group-item-action {% if active_tab == 'favorites' %}active{% endif %}">
+                        <i class="fas fa-heart me-2"></i>Избранное
+                    </a>
+                    <a href="{% url 'users:messages' %}"
+                       class="list-group-item list-group-item-action {% if active_tab == 'messages' %}active{% endif %}">
+                        <i class="fas fa-envelope me-2"></i>Сообщения
+                        {% if unread_messages_count %}
+                        <span class="badge bg-danger float-end">{{ unread_messages_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'users:settings' %}"
+                       class="list-group-item list-group-item-action {% if active_tab == 'settings' %}active{% endif %}">
+                        <i class="fas fa-cog me-2"></i>Настройки
+                    </a>
+                    <a href="{% url 'users:logout' %}"
+                       class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                    </a>
+                </div>
+            </div>
+
+            <!-- Быстрые действия -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="h6 mb-3">Быстрые действия</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'advertisements:ad_create' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus-circle me-2"></i>Добавить объявление
+                        </a>
+                        <a href="{% url 'advertisements:ad_list' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-search me-2"></i>Найти авто
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка: контент -->
+        <div class="col-lg-9">
+            {% if active_tab == 'overview' %}
+            <!-- Обзор профиля -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="h4 mb-0">Обзор профиля</h2>
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit me-1"></i>Редактировать
+                        </a>
+                    </div>
+
+                    <!-- Основная информация -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="h6 mb-3">Основная информация</h5>
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <th width="40%">Имя пользователя:</th>
+                                        <td>{{ user.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Email:</th>
+                                        <td>{{ user.email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Телефон:</th>
+                                        <td>{{ user.phone|default:"Не указан" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Город:</th>
+                                        <td>{{ user.city|default:"Не указан" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Дата регистрации:</th>
+                                        <td>{{ user.date_joined|date:"d.m.Y" }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="h6 mb-3">Личная информация</h5>
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <th width="40%">Имя:</th>
+                                        <td>{{ user.first_name|default:"Не указано" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Фамилия:</th>
+                                        <td>{{ user.last_name|default:"Не указана" }}</td>
+                                    </tr>
+                                    {% if user.dealer_profile %}
+                                    <tr>
+                                        <th>Компания:</th>
+                                        <td>{{ user.dealer_profile.company_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Тип продавца:</th>
+                                        <td>Дилерский центр</td>
+                                    </tr>
+                                    {% elif user.private_profile %}
+                                    <tr>
+                                        <th>Тип продавца:</th>
+                                        <td>Частное лицо</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Мои последние объявления -->
+                    {% if user_ads %}
+                    <div class="mt-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="h6 mb-0">Мои последние объявления</h5>
+                            <a href="{% url 'advertisements:my_ads' %}" class="btn btn-link btn-sm">
+                                Все объявления <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+
+                        <div class="row g-3">
+                            {% for ad in user_ads|slice:":3" %}
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <a href="{% url 'advertisements:ad_detail' ad.slug %}" class="text-decoration-none">
+                                                {{ ad.title|truncatechars:30 }}
+                                            </a>
+                                        </h6>
+                                        <p class="card-text">
+                                            <span class="text-primary">{{ ad.price|intcomma }} ₽</span>
+                                        </p>
+                                        <div class="d-flex justify-content-between small text-muted">
+                                            <span>
+                                                <i class="fas fa-eye me-1"></i>
+                                                {{ ad.views|default:0 }}
+                                            </span>
+                                            <span>{{ ad.created_at|date:"d.m.Y" }}</span>
+                                        </div>
+                                        <div class="mt-3">
+                                            <span class="badge {% if ad.status == 'published' %}bg-success{% elif ad.status == 'draft' %}bg-secondary{% else %}bg-warning{% endif %}">
+                                                {{ ad.get_status_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Статистика -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-car fa-2x text-primary"></i>
+                                </div>
+                                <div>
+                                    <h3 class="h4 mb-0">{{ user_ads_count|default:0 }}</h3>
+                                    <small class="text-muted">Активных объявлений</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-eye fa-2x text-info"></i>
+                                </div>
+                                <div>
+                                    <h3 class="h4 mb-0">{{ total_views|default:0|intcomma }}</h3>
+                                    <small class="text-muted">Всего просмотров</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-heart fa-2x text-danger"></i>
+                                </div>
+                                <div>
+                                    <h3 class="h4 mb-0">{{ user_favorites_count|default:0 }}</h3>
+                                    <small class="text-muted">В избранном</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% elif active_tab == 'edit' %}
+            <!-- Редактирование профиля -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h4 mb-4">Редактирование профиля</h2>
+
+                    <form method="post" enctype="multipart/form-data" id="profile-form">
+                        {% csrf_token %}
+
+                        <!-- Аватар -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    {% if user.avatar %}
+                                    <img src="{{ user.avatar.url }}"
+                                         alt="Аватар"
+                                         id="avatar-preview"
+                                         class="rounded-circle mb-3"
+                                         style="width: 150px; height: 150px; object-fit: cover;">
+                                    {% else %}
+                                    <div id="avatar-preview"
+                                         class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3"
+                                         style="width: 150px; height: 150px; font-size: 3rem;">
+                                        {{ user.get_full_name|slice:":1"|default:user.username|slice:":1"|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <input type="file"
+                                               name="avatar"
+                                               id="id_avatar"
+                                               class="form-control form-control-sm"
+                                               accept="image/*"
+                                               onchange="previewAvatar(this)">
+                                        <div class="form-text small">
+                                            JPG, PNG, не более 2MB
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <!-- Основные поля -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="id_first_name" class="form-label">Имя</label>
+                                        <input type="text"
+                                               name="first_name"
+                                               id="id_first_name"
+                                               class="form-control"
+                                               value="{{ user.first_name|default:'' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="id_last_name" class="form-label">Фамилия</label>
+                                        <input type="text"
+                                               name="last_name"
+                                               id="id_last_name"
+                                               class="form-control"
+                                               value="{{ user.last_name|default:'' }}">
+                                    </div>
+                                </div>
+
+                                <!-- Телефон -->
+                                <div class="mb-3">
+                                    <label for="id_phone" class="form-label">Телефон</label>
+                                    <input type="tel"
+                                           name="phone"
+                                           id="id_phone"
+                                           class="form-control"
+                                           value="{{ user.phone|default:'' }}">
+                                </div>
+
+                                <!-- Город -->
+                                <div class="mb-3">
+                                    <label for="id_city" class="form-label">Город</label>
+                                    <select name="city" id="id_city" class="form-select">
+                                        <option value="">Выберите город</option>
+                                        {% for city_code, city_name in cities %}
+                                        <option value="{{ city_code }}"
+                                                {% if user.city == city_code %}selected{% endif %}>
+                                            {{ city_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- О себе -->
+                        <div class="mb-4">
+                            <label for="id_bio" class="form-label">О себе</label>
+                            <textarea name="bio"
+                                      id="id_bio"
+                                      class="form-control"
+                                      rows="4">{{ user.bio|default:'' }}</textarea>
+                            <div class="form-text">
+                                Расскажите немного о себе (необязательно)
+                            </div>
+                        </div>
+
+                        <!-- Сохранение -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary">
+                                Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Сохранить изменения
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% elif active_tab == 'advertisements' %}
+            <!-- Мои объявления -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="h4 mb-0">Мои объявления</h2>
+                        <a href="{% url 'advertisements:ad_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Добавить объявление
+                        </a>
+                    </div>
+
+                    <!-- Фильтры -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="btn-group" role="group">
+                                <a href="?status=all"
+                                   class="btn btn-outline-secondary {% if current_status == 'all' %}active{% endif %}">
+                                    Все ({{ all_ads_count }})
+                                </a>
+                                <a href="?status=published"
+                                   class="btn btn-outline-secondary {% if current_status == 'published' %}active{% endif %}">
+                                    Активные ({{ published_ads_count }})
+                                </a>
+                                <a href="?status=draft"
+                                   class="btn btn-outline-secondary {% if current_status == 'draft' %}active{% endif %}">
+                                    Черновики ({{ draft_ads_count }})
+                                </a>
+                                <a href="?status=moderation"
+                                   class="btn btn-outline-secondary {% if current_status == 'moderation' %}active{% endif %}">
+                                    На модерации ({{ moderation_ads_count }})
+                                </a>
+                                <a href="?status=rejected"
+                                   class="btn btn-outline-secondary {% if current_status == 'rejected' %}active{% endif %}">
+                                    Отклоненные ({{ rejected_ads_count }})
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Поиск по объявлениям...">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Таблица объявлений -->
+                    {% if ads %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Объявление</th>
+                                    <th>Цена</th>
+                                    <th>Просмотры</th>
+                                    <th>Статус</th>
+                                    <th>Дата</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ad in ads %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if ad.get_main_photo %}
+                                            <img src="{{ ad.get_main_photo.thumbnail.url }}"
+                                                 alt="{{ ad.title }}"
+                                                 class="rounded me-2"
+                                                 style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% endif %}
+                                            <div>
+                                                <a href="{% url 'advertisements:ad_detail' ad.slug %}"
+                                                   class="text-decoration-none">
+                                                    {{ ad.title|truncatechars:50 }}
+                                                </a>
+                                                <div class="small text-muted">
+                                                    {{ ad.model.brand.name }} {{ ad.model.name }}, {{ ad.year }} г.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ ad.price|intcomma }} ₽</td>
+                                    <td>{{ ad.views|default:0 }}</td>
+                                    <td>
+                                        <span class="badge {% if ad.status == 'published' %}bg-success{% elif ad.status == 'draft' %}bg-secondary{% elif ad.status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ ad.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ ad.created_at|date:"d.m.Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'advertisements:ad_edit' ad.slug %}"
+                                               class="btn btn-outline-primary" title="Редактировать">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'advertisements:ad_detail' ad.slug %}"
+                                               class="btn btn-outline-info" title="Просмотр">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
+                                                    title="Удалить"
+                                                    onclick="deleteAd('{{ ad.slug }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Пагинация -->
+                    {% if is_paginated %}
+                        {% include 'includes/pagination.html' with page_obj=ads %}
+                    {% endif %}
+
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-car fa-4x text-muted mb-4"></i>
+                        <h4 class="h5 mb-3">У вас нет объявлений</h4>
+                        <p class="text-muted mb-4">
+                            Создайте первое объявление о продаже автомобиля
+                        </p>
+                        <a href="{% url 'advertisements:ad_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Создать объявление
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% elif active_tab == 'messages' %}
+            <!-- Сообщения -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h4 mb-4">Сообщения</h2>
+
+                    <div class="row">
+                        <!-- Список диалогов -->
+                        <div class="col-md-4">
+                            <div class="list-group list-group-flush border-end">
+                                {% for dialog in dialogs %}
+                                <a href="{% url 'users:messages_dialog' dialog.user.id %}"
+                                   class="list-group-item list-group-item-action {% if active_dialog == dialog.user.id %}active{% endif %}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="position-relative me-2">
+                                            {% if dialog.user.avatar %}
+                                            <img src="{{ dialog.user.avatar.url }}"
+                                                 alt="{{ dialog.user.get_full_name }}"
+                                                 class="rounded-circle"
+                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                 style="width: 40px; height: 40px;">
+                                                {{ dialog.user.get_full_name|slice:":1"|default:dialog.user.username|slice:":1"|upper }}
+                                            </div>
+                                            {% endif %}
+                                            {% if dialog.unread %}
+                                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                                                <span class="visually-hidden">Новые сообщения</span>
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-0">{{ dialog.user.get_full_name|default:dialog.user.username }}</h6>
+                                            <small class="text-muted">
+                                                {{ dialog.last_message|truncatechars:30 }}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">{{ dialog.last_time|timesince }} назад</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% empty %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-envelope fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Нет сообщений</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- История сообщений -->
+                        <div class="col-md-8">
+                            {% if active_dialog %}
+                            <div class="d-flex flex-column h-100">
+                                <!-- Заголовок диалога -->
+                                <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                                    {% with dialog_user=dialog_user %}
+                                    {% if dialog_user.avatar %}
+                                    <img src="{{ dialog_user.avatar.url }}"
+                                         alt="{{ dialog_user.get_full_name }}"
+                                         class="rounded-circle me-2"
+                                         style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
+                                         style="width: 40px; height: 40px;">
+                                        {{ dialog_user.get_full_name|slice:":1"|default:dialog_user.username|slice:":1"|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0">{{ dialog_user.get_full_name|default:dialog_user.username }}</h6>
+                                        <small class="text-muted">
+                                            {% if dialog_user.city %}{{ dialog_user.city }}{% endif %}
+                                        </small>
+                                    </div>
+                                    {% endwith %}
+                                </div>
+
+                                <!-- Сообщения -->
+                                <div class="flex-grow-1 overflow-auto mb-3" style="max-height: 400px;" id="messages-container">
+                                    {% for message in messages %}
+                                    <div class="mb-3 {% if message.sender == user %}text-end{% endif %}">
+                                        <div class="d-inline-block p-3 rounded {% if message.sender == user %}bg-primary text-white{% else %}bg-light{% endif %}"
+                                             style="max-width: 70%;">
+                                            {{ message.text }}
+                                        </div>
+                                        <div class="small text-muted mt-1">
+                                            {{ message.created_at|date:"H:i" }}
+                                            {% if message.is_read %}
+                                            <i class="fas fa-check ms-1"></i>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Форма отправки -->
+                                <form method="post" action="{% url 'users:send_message' %}" class="border-top pt-3">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="recipient_id" value="{{ dialog_user.id }}">
+                                    <div class="input-group">
+                                        <textarea name="message"
+                                                  class="form-control"
+                                                  rows="2"
+                                                  placeholder="Введите сообщение..."
+                                                  required></textarea>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-comments fa-4x text-muted mb-4"></i>
+                                <h4 class="h5 mb-3">Выберите диалог</h4>
+                                <p class="text-muted">Выберите диалог слева или начните новый</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% elif active_tab == 'settings' %}
+            <!-- Настройки -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h4 mb-4">Настройки аккаунта</h2>
+
+                    <!-- Уведомления -->
+                    <div class="mb-5">
+                        <h5 class="h6 mb-3">Уведомления</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           id="notify_new_messages"
+                                           checked>
+                                    <label class="form-check-label" for="notify_new_messages">
+                                        Новые сообщения
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           id="notify_ad_updates"
+                                           checked>
+                                    <label class="form-check-label" for="notify_ad_updates">
+                                        Обновления объявлений
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           id="notify_newsletter"
+                                           checked>
+                                    <label class="form-check-label" for="notify_newsletter">
+                                        Рассылка новостей
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           id="notify_similar_ads">
+                                    <label class="form-check-label" for="notify_similar_ads">
+                                        Похожие объявления
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Безопасность -->
+                    <div class="mb-5">
+                        <h5 class="h6 mb-3">Безопасность</h5>
+                        <div class="mb-3">
+                            <a href="{% url 'users:password_change' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-key me-2"></i>Изменить пароль
+                            </a>
+                        </div>
+                        <div class="form-text">
+                            Последнее изменение пароля: {{ user.last_password_change|date:"d.m.Y H:i"|default:"Никогда" }}
+                        </div>
+                    </div>
+
+                    <!-- Двухфакторная аутентификация -->
+                    <div class="mb-5">
+                        <h5 class="h6 mb-3">Двухфакторная аутентификация</h5>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Добавьте дополнительный уровень безопасности к своему аккаунту
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="two_factor_auth">
+                            <label class="form-check-label" for="two_factor_auth">
+                                Включить двухфакторную аутентификацию
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Приватность -->
+                    <div class="mb-5">
+                        <h5 class="h6 mb-3">Приватность</h5>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="show_phone"
+                                   checked>
+                            <label class="form-check-label" for="show_phone">
+                                Показывать телефон в объявлениях
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="show_email">
+                            <label class="form-check-label" for="show_email">
+                                Показывать email в профиле
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Опасная зона -->
+                    <div class="border-top pt-4">
+                        <h5 class="h6 mb-3 text-danger">Опасная зона</h5>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Эти действия необратимы. Пожалуйста, будьте осторожны.
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteAccountModal">
+                                <i class="fas fa-trash me-2"></i>Удалить аккаунт
+                            </button>
+                            <button class="btn btn-outline-warning"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deactivateAccountModal">
+                                <i class="fas fa-user-slash me-2"></i>Деактивировать аккаунт
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна -->
+
+<!-- Удаление аккаунта -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Удаление аккаунта</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить!
+                </div>
+                <p>Вы уверены, что хотите удалить свой аккаунт? Это приведет к:</p>
+                <ul>
+                    <li>Удалению всех ваших объявлений</li>
+                    <li>Удалению ваших сообщений</li>
+                    <li>Потере доступа ко всем данным аккаунта</li>
+                </ul>
+                <p class="text-danger"><strong>Вся информация будет удалена без возможности восстановления.</strong></p>
+                <div class="mb-3">
+                    <label for="confirmDelete" class="form-label">
+                        Для подтверждения введите "УДАЛИТЬ"
+                    </label>
+                    <input type="text" class="form-control" id="confirmDelete">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" onclick="deleteAccount()" disabled id="deleteButton">
+                    Удалить аккаунт
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Деактивация аккаунта -->
+<div class="modal fade" id="deactivateAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Деактивация аккаунта</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите деактивировать свой аккаунт? Это приведет к:</p>
+                <ul>
+                    <li>Скрытию всех ваших объявлений</li>
+                    <li>Отключению уведомлений</li>
+                    <li>Невозможности входа в аккаунт</li>
+                </ul>
+                <p>Вы сможете восстановить аккаунт в течение 30 дней.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-warning" onclick="deactivateAccount()">
+                    Деактивировать
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Предпросмотр аватара
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('avatar-preview');
+            if (preview.tagName === 'IMG') {
+                preview.src = e.target.result;
+            } else {
+                // Заменяем div на img
+                const img = document.createElement('img');
+                img.id = 'avatar-preview';
+                img.src = e.target.result;
+                img.className = 'rounded-circle mb-3';
+                img.style.cssText = 'width: 150px; height: 150px; object-fit: cover;';
+                preview.parentNode.replaceChild(img, preview);
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Удаление объявления
+function deleteAd(adSlug) {
+    if (confirm('Удалить это объявление?')) {
+        fetch(`/api/ads/${adSlug}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при удалении объявления');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ошибка при удалении объявления');
+        });
+    }
+}
+
+// Подтверждение удаления аккаунта
+document.getElementById('confirmDelete').addEventListener('input', function() {
+    const deleteButton = document.getElementById('deleteButton');
+    deleteButton.disabled = this.value !== 'УДАЛИТЬ';
+});
+
+function deleteAccount() {
+    if (confirm('Вы уверены, что хотите удалить аккаунт? Это действие необратимо!')) {
+        fetch('/api/account/delete/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/';
+            } else {
+                alert('Ошибка при удалении аккаунта');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ошибка при удаления аккаунта');
+        });
+    }
+}
+
+function deactivateAccount() {
+    if (confirm('Деактивировать аккаунт?')) {
+        fetch('/api/account/deactivate/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+
+// Автопрокрутка сообщений вниз
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesContainer = document.getElementById('messages-container');
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+});
+</script>
+{% endblock %}

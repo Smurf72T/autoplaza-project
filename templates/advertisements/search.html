@@ -1,0 +1,77 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Поиск | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Поиск автомобилей</h1>
+
+    <form method="get" action="{% url 'core:search' %}" class="mb-4">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Введите марку или модель..." value="{{ query|default:'' }}">
+            <button class="btn btn-primary" type="submit">Найти</button>
+        </div>
+    </form>
+
+    {% if query %}
+        <h2>Результаты поиска для "{{ query }}"</h2>
+
+        {% if results_count > 0 %}
+            <p>Найдено результатов: {{ results_count }}</p>
+
+            {% if brands %}
+            <h3>Марки</h3>
+            <div class="row">
+                {% for brand in brands %}
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ brand.name }}</h5>
+                            <p class="card-text">{{ brand.description|truncatechars:50 }}</p>
+                            <a href="{% url 'core:car_brand_detail' brand.pk %}" class="btn btn-primary btn-sm">
+                                Смотреть модели
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if models %}
+            <h3>Модели</h3>
+            <div class="row">
+                {% for model in models %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <div style="width: 40px; height: 40px; background: #007bff; color: white; border-radius: 5px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                    {{ model.brand.name.0|upper }}
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ model.brand.name }}</h6>
+                                    <small class="text-muted">{{ model.body_type|default:"-" }}</small>
+                                </div>
+                            </div>
+                            <h5>{{ model.name }}</h5>
+                            {% if model.year_start %}
+                            <p class="text-muted">С {{ model.year_start }} года</p>
+                            {% endif %}
+                            <a href="{% url 'core:car_model_detail' model.pk %}" class="btn btn-outline-primary btn-sm">
+                                Подробнее
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> По запросу "{{ query }}" ничего не найдено.
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+<!-- templates/catalog/carbrand_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Марки автомобилей | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Марки автомобилей</h1>
+    {% include 'catalog/brand_list.html' %}
+</div>
+{% endblock %}

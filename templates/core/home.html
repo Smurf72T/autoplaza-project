@@ -1,0 +1,147 @@
+﻿<!-- templates/core/home.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Autoplaza - Главная{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Герой-секция -->
+    <div class="hero-section text-center mb-5 py-5 bg-light rounded">
+        <h1 class="display-4 mb-3">Найдите свой идеальный автомобиль</h1>
+        <p class="lead mb-4">Более 10 000 проверенных объявлений по всей России</p>
+
+        <!-- Быстрый поиск -->
+        <div class="quick-search mb-4">
+            <form action="{% url 'advertisements:ad_list' %}" method="get" class="row g-3 justify-content-center">
+                <div class="col-md-4">
+                    <input type="text" name="q" class="form-control form-control-lg"
+                           placeholder="Марка, модель или ключевое слово">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-search"></i> Найти
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="stats-section mb-5">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <h3 class="display-6 text-primary">{{ stats.total_ads|default:"10,000+" }}</h3>
+                    <p>Объявлений</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <h3 class="display-6 text-primary">{{ stats.total_brands|default:"50+" }}</h3>
+                    <p>Марок</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <h3 class="display-6 text-primary">{{ stats.total_cities|default:"200+" }}</h3>
+                    <p>Городов</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <h3 class="display-6 text-primary">{{ stats.active_users|default:"5,000+" }}</h3>
+                    <p>Пользователей</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Популярные марки -->
+    <section class="popular-brands mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h3">Популярные марки</h2>
+            <a href="{% url 'cars:brand_list' %}" class="btn btn-outline-primary btn-sm">
+                Все марки <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+
+        <div class="row g-3">
+            {% for brand in popular_brands|slice:":8" %}
+            <div class="col-md-3 col-6">
+                <a href="{% url 'cars:brand_detail' brand.slug %}"
+                   class="brand-card text-center text-decoration-none">
+                    <div class="brand-logo-container mb-2">
+                        {% if brand.logo %}
+                            <img src="{{ brand.logo.url }}" alt="{{ brand.name }}"
+                                 class="img-fluid" style="max-height: 60px;">
+                        {% else %}
+                            <div class="brand-placeholder bg-primary text-white rounded-circle d-inline-flex
+                                      align-items-center justify-content-center"
+                                 style="width: 60px; height: 60px;">
+                                {{ brand.name|slice:":1" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="brand-name">{{ brand.name }}</div>
+                    <small class="text-muted">{{ brand.models_count }} моделей</small>
+                </a>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <p class="text-muted text-center">Популярные марки скоро появятся</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Последние объявления -->
+    <section class="recent-ads mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h3">Свежие объявления</h2>
+            <a href="{% url 'advertisements:ad_list' %}" class="btn btn-outline-primary btn-sm">
+                Все объявления <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+
+        <div class="row g-4">
+            {% for ad in recent_ads|slice:":4" %}
+            <div class="col-md-3">
+                {% include 'advertisements/partials/ad_card.html' with ad=ad %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <p class="text-muted text-center">Нет свежих объявлений</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Преимущества -->
+    <section class="benefits bg-light py-5 rounded">
+        <div class="row">
+            <div class="col-md-4 text-center mb-4 mb-md-0">
+                <div class="benefit-icon mb-3">
+                    <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                </div>
+                <h4>Безопасная сделка</h4>
+                <p>Проверенные продавцы и безопасные способы оплаты</p>
+            </div>
+            <div class="col-md-4 text-center mb-4 mb-md-0">
+                <div class="benefit-icon mb-3">
+                    <i class="fas fa-search fa-3x text-primary"></i>
+                </div>
+                <h4>Подробная проверка</h4>
+                <p>Детальная информация о каждом автомобиле</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="benefit-icon mb-3">
+                    <i class="fas fa-headset fa-3x text-primary"></i>
+                </div>
+                <h4>Поддержка 24/7</h4>
+                <p>Наша команда всегда готова помочь</p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

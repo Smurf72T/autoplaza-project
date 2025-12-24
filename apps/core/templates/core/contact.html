@@ -1,0 +1,173 @@
+﻿<!-- templates/core/contact.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Контакты Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Заголовок -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 mb-3">Контакты</h1>
+                <p class="lead text-muted">Свяжитесь с нами любым удобным способом</p>
+            </div>
+
+            <div class="row">
+                <!-- Контактная информация -->
+                <div class="col-lg-6 mb-5 mb-lg-0">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-5">
+                            <h3 class="h4 mb-4">Наши контакты</h3>
+                            
+                            <div class="contact-item d-flex mb-4">
+                                <div class="contact-icon me-3">
+                                    <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
+                                </div>
+                                <div>
+                                    <h5 class="h6 mb-2">Адрес офиса</h5>
+                                    <p class="text-muted mb-0">Москва, ул. Автомобильная, д. 1<br>Бизнес-центр "Авто-Плаза"</p>
+                                </div>
+                            </div>
+
+                            <div class="contact-item d-flex mb-4">
+                                <div class="contact-icon me-3">
+                                    <i class="fas fa-phone fa-2x text-primary"></i>
+                                </div>
+                                <div>
+                                    <h5 class="h6 mb-2">Телефоны</h5>
+                                    <p class="text-muted mb-0">
+                                        <strong>Общие вопросы:</strong> +7 (800) 123-45-67<br>
+                                        <strong>Техподдержка:</strong> +7 (495) 765-43-21
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="contact-item d-flex mb-4">
+                                <div class="contact-icon me-3">
+                                    <i class="fas fa-envelope fa-2x text-primary"></i>
+                                </div>
+                                <div>
+                                    <h5 class="h6 mb-2">Электронная почта</h5>
+                                    <p class="text-muted mb-0">
+                                        <strong>Общие вопросы:</strong> info@autoplaza.ru<br>
+                                        <strong>Реклама:</strong> ads@autoplaza.ru<br>
+                                        <strong>Поддержка:</strong> support@autoplaza.ru
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="contact-item d-flex">
+                                <div class="contact-icon me-3">
+                                    <i class="fas fa-clock fa-2x text-primary"></i>
+                                </div>
+                                <div>
+                                    <h5 class="h6 mb-2">Время работы</h5>
+                                    <p class="text-muted mb-0">
+                                        <strong>Пн-Пт:</strong> 9:00 - 18:00<br>
+                                        <strong>Сб-Вс:</strong> 10:00 - 16:00
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Социальные сети -->
+                            <div class="mt-5">
+                                <h5 class="h6 mb-3">Мы в социальных сетях</h5>
+                                <div class="social-links">
+                                    <a href="#" class="btn btn-outline-primary btn-sm me-2">
+                                        <i class="fab fa-vk"></i> ВКонтакте
+                                    </a>
+                                    <a href="#" class="btn btn-outline-primary btn-sm me-2">
+                                        <i class="fab fa-telegram"></i> Telegram
+                                    </a>
+                                    <a href="#" class="btn btn-outline-primary btn-sm">
+                                        <i class="fab fa-youtube"></i> YouTube
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Форма обратной связи -->
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-5">
+                            <h3 class="h4 mb-4">Обратная связь</h3>
+                            <p class="text-muted mb-4">Заполните форму ниже и мы свяжемся с вами в ближайшее время</p>
+                            
+                            <form method="post" action="{% url 'core:contact' %}">
+                                {% csrf_token %}
+                                
+                                {% if messages %}
+                                <div class="alert alert-info">
+                                    {% for message in messages %}
+                                        {{ message }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Ваше имя *</label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Телефон</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="subject" class="form-label">Тема обращения *</label>
+                                    <select class="form-select" id="subject" name="subject" required>
+                                        <option value="">Выберите тему</option>
+                                        <option value="general">Общий вопрос</option>
+                                        <option value="support">Техническая поддержка</option>
+                                        <option value="advertising">Реклама и сотрудничество</option>
+                                        <option value="suggestion">Предложение по улучшению</option>
+                                        <option value="complaint">Жалоба</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="message" class="form-label">Сообщение *</label>
+                                    <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-paper-plane me-2"></i>Отправить сообщение
+                                    </button>
+                                </div>
+
+                                <div class="form-text mt-3">
+                                    Нажимая кнопку, вы соглашаетесь с обработкой персональных данных
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карта -->
+            <div class="card border-0 shadow-sm mt-5">
+                <div class="card-body p-5">
+                    <h3 class="h4 mb-4">Как добраться</h3>
+                    <div class="ratio ratio-16x9">
+                        <iframe 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2245.372778946054!2d37.61763431576171!3d55.75199798055115!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46b54a5a738fa419%3A0x7c347d506b52311f!2z0JrRgNCw0YHQvdC-0Y_RgNGB0LosINCc0L7RgdC60LLQsA!5e0!3m2!1sru!2sru!4v1612963225024!5m2!1sru!2sru"
+                            style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

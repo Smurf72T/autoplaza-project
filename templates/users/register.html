@@ -1,0 +1,726 @@
+<!-- templates/users/register.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Регистрация | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <!-- Карточка регистрации -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <!-- Заголовок -->
+                    <div class="text-center mb-4">
+                        <div class="mb-3">
+                            <i class="fas fa-user-plus fa-3x text-primary"></i>
+                        </div>
+                        <h1 class="h3 mb-0">Регистрация в Autoplaza</h1>
+                        <p class="text-muted">Создайте свой аккаунт за минуту</p>
+                    </div>
+
+                    <!-- Форма регистрации -->
+                    <form method="post" action="{% url 'users:register' %}" novalidate id="register-form">
+                        {% csrf_token %}
+
+                        <!-- Прогресс регистрации -->
+                        <div class="mb-4">
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%;"
+                                     id="registration-progress"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2 small">
+                                <span>Основное</span>
+                                <span>Контактные данные</span>
+                                <span>Завершение</span>
+                            </div>
+                        </div>
+
+                        <!-- Табы для многошаговой формы -->
+                        <ul class="nav nav-pills justify-content-center mb-4 d-none" id="registration-tabs">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#step1">
+                                    <i class="fas fa-user me-2"></i>Основное
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#step2">
+                                    <i class="fas fa-address-card me-2"></i>Контактные данные
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#step3">
+                                    <i class="fas fa-check-circle me-2"></i>Завершение
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Содержимое табов -->
+                        <div class="tab-content">
+                            <!-- Шаг 1: Основные данные -->
+                            <div class="tab-pane fade show active" id="step1">
+                                <h5 class="h6 mb-4">Основные данные</h5>
+
+                                <!-- Имя пользователя -->
+                                <div class="mb-3">
+                                    <label for="id_username" class="form-label">Имя пользователя *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-user"></i>
+                                        </span>
+                                        <input type="text"
+                                               name="username"
+                                               id="id_username"
+                                               class="form-control"
+                                               placeholder="Придумайте имя пользователя"
+                                               required
+                                               minlength="3"
+                                               maxlength="30"
+                                               oninput="checkUsernameAvailability(this.value)">
+                                    </div>
+                                    <div class="form-text">
+                                        От 3 до 30 символов. Только буквы, цифры и подчеркивания.
+                                    </div>
+                                    <div id="username-feedback" class="mt-1"></div>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="mb-3">
+                                    <label for="id_email" class="form-label">Email *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-envelope"></i>
+                                        </span>
+                                        <input type="email"
+                                               name="email"
+                                               id="id_email"
+                                               class="form-control"
+                                               placeholder="Введите ваш email"
+                                               required
+                                               oninput="checkEmailAvailability(this.value)">
+                                    </div>
+                                    <div id="email-feedback" class="mt-1"></div>
+                                </div>
+
+                                <!-- Пароль -->
+                                <div class="mb-3">
+                                    <label for="id_password1" class="form-label">Пароль *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                        <input type="password"
+                                               name="password1"
+                                               id="id_password1"
+                                               class="form-control"
+                                               placeholder="Придумайте надежный пароль"
+                                               required
+                                               minlength="8"
+                                               oninput="checkPasswordStrength(this.value)">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                                onclick="togglePasswordVisibility('id_password1')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">
+                                        Минимум 8 символов, включая буквы и цифры.
+                                    </div>
+                                    <div id="password-strength" class="mt-2">
+                                        <div class="progress" style="height: 5px;">
+                                            <div class="progress-bar" id="password-strength-bar"
+                                                 style="width: 0%;"></div>
+                                        </div>
+                                        <small id="password-strength-text" class="text-muted"></small>
+                                    </div>
+                                </div>
+
+                                <!-- Подтверждение пароля -->
+                                <div class="mb-4">
+                                    <label for="id_password2" class="form-label">Подтверждение пароля *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                        <input type="password"
+                                               name="password2"
+                                               id="id_password2"
+                                               class="form-control"
+                                               placeholder="Повторите пароль"
+                                               required
+                                               oninput="checkPasswordMatch()">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                                onclick="togglePasswordVisibility('id_password2')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div id="password-match-feedback" class="mt-1"></div>
+                                </div>
+
+                                <!-- Тип аккаунта -->
+                                <div class="mb-4">
+                                    <label class="form-label mb-3">Тип аккаунта</label>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check card border h-100"
+                                                 onclick="selectAccountType('buyer')"
+                                                 id="buyer-card">
+                                                <div class="card-body text-center">
+                                                    <input class="form-check-input"
+                                                           type="radio"
+                                                           name="account_type"
+                                                           value="buyer"
+                                                           id="account_type_buyer"
+                                                           checked>
+                                                    <label class="form-check-label d-block"
+                                                           for="account_type_buyer">
+                                                        <i class="fas fa-shopping-cart fa-2x mb-2 text-primary"></i>
+                                                        <h6 class="mb-1">Покупатель</h6>
+                                                        <small class="text-muted">Хочу покупать автомобили</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check card border h-100"
+                                                 onclick="selectAccountType('seller')"
+                                                 id="seller-card">
+                                                <div class="card-body text-center">
+                                                    <input class="form-check-input"
+                                                           type="radio"
+                                                           name="account_type"
+                                                           value="seller"
+                                                           id="account_type_seller">
+                                                    <label class="form-check-label d-block"
+                                                           for="account_type_seller">
+                                                        <i class="fas fa-car fa-2x mb-2 text-success"></i>
+                                                        <h6 class="mb-1">Продавец</h6>
+                                                        <small class="text-muted">Хочу продавать автомобили</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Кнопки навигации -->
+                                <div class="d-flex justify-content-between">
+                                    <div></div>
+                                    <button type="button" class="btn btn-primary" onclick="nextStep(2)">
+                                        Далее <i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Шаг 2: Контактные данные -->
+                            <div class="tab-pane fade" id="step2">
+                                <h5 class="h6 mb-4">Контактные данные</h5>
+
+                                <!-- Имя и фамилия -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="id_first_name" class="form-label">Имя</label>
+                                        <input type="text"
+                                               name="first_name"
+                                               id="id_first_name"
+                                               class="form-control"
+                                               placeholder="Ваше имя">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="id_last_name" class="form-label">Фамилия</label>
+                                        <input type="text"
+                                               name="last_name"
+                                               id="id_last_name"
+                                               class="form-control"
+                                               placeholder="Ваша фамилия">
+                                    </div>
+                                </div>
+
+                                <!-- Телефон -->
+                                <div class="mb-3">
+                                    <label for="id_phone" class="form-label">Телефон *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-phone"></i>
+                                        </span>
+                                        <input type="tel"
+                                               name="phone"
+                                               id="id_phone"
+                                               class="form-control"
+                                               placeholder="+7 (999) 123-45-67"
+                                               required>
+                                    </div>
+                                    <div class="form-text">
+                                        Телефон нужен для связи с покупателями/продавцами
+                                    </div>
+                                </div>
+
+                                <!-- Город -->
+                                <div class="mb-3">
+                                    <label for="id_city" class="form-label">Город</label>
+                                    <select name="city" id="id_city" class="form-select">
+                                        <option value="">Выберите город</option>
+                                        <option value="moscow">Москва</option>
+                                        <option value="saint-petersburg">Санкт-Петербург</option>
+                                        <option value="ekaterinburg">Екатеринбург</option>
+                                        <option value="novosibirsk">Новосибирск</option>
+                                        <option value="kazan">Казань</option>
+                                        <option value="other">Другой город</option>
+                                    </select>
+                                </div>
+
+                                <!-- Для продавцов: дополнительные поля -->
+                                <div id="seller-fields" class="d-none">
+                                    <h6 class="h6 mb-3 mt-4">Информация для продавца</h6>
+
+                                    <!-- Тип продавца -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Вы продаете как:</label>
+                                        <div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio"
+                                                       name="seller_type" value="private" id="seller_type_private"
+                                                       checked>
+                                                <label class="form-check-label" for="seller_type_private">
+                                                    Частное лицо
+                                                </label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio"
+                                                       name="seller_type" value="dealer" id="seller_type_dealer">
+                                                <label class="form-check-label" for="seller_type_dealer">
+                                                    Дилерский центр
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Название компании (для дилеров) -->
+                                    <div class="mb-3 d-none" id="company-name-field">
+                                        <label for="id_company_name" class="form-label">Название компании</label>
+                                        <input type="text"
+                                               name="company_name"
+                                               id="id_company_name"
+                                               class="form-control"
+                                               placeholder="Название вашей компании">
+                                    </div>
+                                </div>
+
+                                <!-- Соглашение -->
+                                <div class="mb-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               name="terms"
+                                               id="id_terms"
+                                               required>
+                                        <label class="form-check-label" for="id_terms">
+                                            Я соглашаюсь с
+                                            <a href="#" class="text-decoration-none">пользовательским соглашением</a>
+                                            и
+                                            <a href="#" class="text-decoration-none">политикой конфиденциальности</a>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Кнопки навигации -->
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep(1)">
+                                        <i class="fas fa-arrow-left me-2"></i>Назад
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="nextStep(3)">
+                                        Далее <i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Шаг 3: Завершение -->
+                            <div class="tab-pane fade" id="step3">
+                                <h5 class="h6 mb-4">Завершение регистрации</h5>
+
+                                <!-- Сводка -->
+                                <div class="card border-0 bg-light mb-4">
+                                    <div class="card-body">
+                                        <h6 class="h6 mb-3">Проверьте введенные данные:</h6>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p class="mb-2">
+                                                    <strong>Имя пользователя:</strong><br>
+                                                    <span id="summary-username"></span>
+                                                </p>
+                                                <p class="mb-2">
+                                                    <strong>Email:</strong><br>
+                                                    <span id="summary-email"></span>
+                                                </p>
+                                                <p class="mb-0">
+                                                    <strong>Тип аккаунта:</strong><br>
+                                                    <span id="summary-account-type"></span>
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p class="mb-2">
+                                                    <strong>Телефон:</strong><br>
+                                                    <span id="summary-phone"></span>
+                                                </p>
+                                                <p class="mb-2">
+                                                    <strong>Город:</strong><br>
+                                                    <span id="summary-city"></span>
+                                                </p>
+                                                <p class="mb-0">
+                                                    <strong>Имя:</strong><br>
+                                                    <span id="summary-name"></span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Капча (если нужно) -->
+                                {% if not debug %}
+                                <div class="mb-4">
+                                    <div class="g-recaptcha" data-sitekey="your_site_key"></div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Кнопки завершения -->
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep(2)">
+                                        <i class="fas fa-arrow-left me-2"></i>Назад
+                                    </button>
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-user-plus me-2"></i>Зарегистрироваться
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ошибки формы -->
+                        {% if form.errors %}
+                        <div class="alert alert-danger mt-4">
+                            <h6 class="alert-heading mb-2">Исправьте ошибки:</h6>
+                            <ul class="mb-0">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ссылка на вход -->
+            <div class="text-center mt-4">
+                <p class="mb-0">
+                    Уже есть аккаунт?
+                    <a href="{% url 'users:login' %}" class="text-decoration-none fw-semibold">
+                        Войдите
+                    </a>
+                </p>
+            </div>
+
+            <!-- Преимущества регистрации -->
+            <div class="row mt-4 g-3">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-car fa-2x text-primary mb-3"></i>
+                            <h6 class="h6 mb-2">Продавайте авто</h6>
+                            <p class="small text-muted mb-0">Размещайте объявления бесплатно</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-heart fa-2x text-danger mb-3"></i>
+                            <h6 class="h6 mb-2">Сохраняйте в избранное</h6>
+                            <p class="small text-muted mb-0">Следите за понравившимися авто</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-bell fa-2x text-warning mb-3"></i>
+                            <h6 class="h6 mb-2">Получайте уведомления</h6>
+                            <p class="small text-muted mb-0">Узнавайте о новых предложениях</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script>
+// Текущий шаг регистрации
+let currentStep = 1;
+
+// Навигация по шагам
+function goToStep(stepNumber) {
+    currentStep = stepNumber;
+
+    // Обновляем прогресс
+    const progress = (stepNumber / 3) * 100;
+    document.getElementById('registration-progress').style.width = `${progress}%`;
+
+    // Обновляем активный таб
+    document.querySelectorAll('#registration-tabs .nav-link').forEach((tab, index) => {
+        if (index + 1 === stepNumber) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+
+    // Показываем соответствующий контент
+    document.querySelectorAll('.tab-pane').forEach((pane, index) => {
+        if (index + 1 === stepNumber) {
+            pane.classList.add('show', 'active');
+        } else {
+            pane.classList.remove('show', 'active');
+        }
+    });
+}
+
+function nextStep(nextStepNumber) {
+    if (validateStep(currentStep)) {
+        if (currentStep === 2) {
+            updateSummary();
+        }
+        goToStep(nextStepNumber);
+    }
+}
+
+function prevStep(prevStepNumber) {
+    goToStep(prevStepNumber);
+}
+
+// Валидация шагов
+function validateStep(step) {
+    let isValid = true;
+
+    switch(step) {
+        case 1:
+            const username = document.getElementById('id_username');
+            const email = document.getElementById('id_email');
+            const password1 = document.getElementById('id_password1');
+            const password2 = document.getElementById('id_password2');
+
+            if (!username.value.trim() || username.value.length < 3) {
+                showError(username, 'Имя пользователя должно быть не менее 3 символов');
+                isValid = false;
+            }
+
+            if (!email.value.trim() || !isValidEmail(email.value)) {
+                showError(email, 'Введите корректный email');
+                isValid = false;
+            }
+
+            if (!password1.value || password1.value.length < 8) {
+                showError(password1, 'Пароль должен быть не менее 8 символов');
+                isValid = false;
+            }
+
+            if (password1.value !== password2.value) {
+                showError(password2, 'Пароли не совпадают');
+                isValid = false;
+            }
+            break;
+
+        case 2:
+            const phone = document.getElementById('id_phone');
+            const terms = document.getElementById('id_terms');
+
+            if (!phone.value.trim()) {
+                showError(phone, 'Введите номер телефона');
+                isValid = false;
+            }
+
+            if (!terms.checked) {
+                showError(terms, 'Необходимо согласиться с условиями');
+                isValid = false;
+            }
+            break;
+    }
+
+    return isValid;
+}
+
+// Показать ошибку
+function showError(element, message) {
+    element.classList.add('is-invalid');
+
+    let feedback = element.nextElementSibling;
+    if (feedback && feedback.classList.contains('invalid-feedback')) {
+        feedback.textContent = message;
+    } else {
+        feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback';
+        feedback.textContent = message;
+        element.parentNode.appendChild(feedback);
+    }
+}
+
+// Проверка email
+function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+// Проверка доступности username
+function checkUsernameAvailability(username) {
+    if (username.length < 3) return;
+
+    fetch(`/api/check-username/?username=${encodeURIComponent(username)}`)
+        .then(response => response.json())
+        .then(data => {
+            const feedback = document.getElementById('username-feedback');
+            if (data.available) {
+                feedback.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Имя доступно</span>';
+                document.getElementById('id_username').classList.remove('is-invalid');
+            } else {
+                feedback.innerHTML = '<span class="text-danger"><i class="fas fa-times"></i> Имя уже занято</span>';
+                document.getElementById('id_username').classList.add('is-invalid');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Проверка доступности email
+function checkEmailAvailability(email) {
+    if (!email.includes('@')) return;
+
+    fetch(`/api/check-email/?email=${encodeURIComponent(email)}`)
+        .then(response => response.json())
+        .then(data => {
+            const feedback = document.getElementById('email-feedback');
+            if (data.available) {
+                feedback.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Email доступен</span>';
+                document.getElementById('id_email').classList.remove('is-invalid');
+            } else {
+                feedback.innerHTML = '<span class="text-danger"><i class="fas fa-times"></i> Email уже зарегистрирован</span>';
+                document.getElementById('id_email').classList.add('is-invalid');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Проверка сложности пароля
+function checkPasswordStrength(password) {
+    const bar = document.getElementById('password-strength-bar');
+    const text = document.getElementById('password-strength-text');
+
+    let strength = 0;
+    let message = '';
+
+    if (password.length >= 8) strength += 25;
+    if (/[A-Z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 25;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 25;
+
+    bar.style.width = `${strength}%`;
+
+    if (strength < 50) {
+        bar.className = 'progress-bar bg-danger';
+        message = 'Слабый пароль';
+    } else if (strength < 75) {
+        bar.className = 'progress-bar bg-warning';
+        message = 'Средний пароль';
+    } else {
+        bar.className = 'progress-bar bg-success';
+        message = 'Надежный пароль';
+    }
+
+    text.textContent = message;
+}
+
+// Проверка совпадения паролей
+function checkPasswordMatch() {
+    const password1 = document.getElementById('id_password1').value;
+    const password2 = document.getElementById('id_password2').value;
+    const feedback = document.getElementById('password-match-feedback');
+
+    if (!password2) return;
+
+    if (password1 === password2) {
+        feedback.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Пароли совпадают</span>';
+        document.getElementById('id_password2').classList.remove('is-invalid');
+    } else {
+        feedback.innerHTML = '<span class="text-danger"><i class="fas fa-times"></i> Пароли не совпадают</span>';
+        document.getElementById('id_password2').classList.add('is-invalid');
+    }
+}
+
+// Выбор типа аккаунта
+function selectAccountType(type) {
+    document.getElementById('account_type_buyer').checked = type === 'buyer';
+    document.getElementById('account_type_seller').checked = type === 'seller';
+
+    document.getElementById('buyer-card').classList.toggle('border-primary', type === 'buyer');
+    document.getElementById('seller-card').classList.toggle('border-success', type === 'seller');
+
+    // Показываем/скрываем дополнительные поля для продавцов
+    const sellerFields = document.getElementById('seller-fields');
+    if (type === 'seller') {
+        sellerFields.classList.remove('d-none');
+
+        // Обработка типа продавца
+        document.getElementById('seller_type_dealer').addEventListener('change', function() {
+            document.getElementById('company-name-field').classList.toggle('d-none', !this.checked);
+        });
+    } else {
+        sellerFields.classList.add('d-none');
+    }
+}
+
+// Обновление сводки
+function updateSummary() {
+    document.getElementById('summary-username').textContent = document.getElementById('id_username').value;
+    document.getElementById('summary-email').textContent = document.getElementById('id_email').value;
+    document.getElementById('summary-phone').textContent = document.getElementById('id_phone').value;
+    document.getElementById('summary-city').textContent = document.getElementById('id_city').options[document.getElementById('id_city').selectedIndex].text;
+    document.getElementById('summary-name').textContent = `${document.getElementById('id_first_name').value} ${document.getElementById('id_last_name').value}`.trim() || 'Не указано';
+
+    const accountType = document.querySelector('input[name="account_type"]:checked').value;
+    document.getElementById('summary-account-type').textContent = accountType === 'buyer' ? 'Покупатель' : 'Продавец';
+}
+
+// Показать/скрыть пароль
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    const button = input.parentNode.querySelector('button i');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        button.className = 'fas fa-eye';
+    }
+}
+
+// Маска для телефона
+document.getElementById('id_phone').addEventListener('input', function(e) {
+    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+    e.target.value = !x[2] ? x[1] : '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+});
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    selectAccountType('buyer');
+    goToStep(1);
+});
+</script>
+{% endblock %}

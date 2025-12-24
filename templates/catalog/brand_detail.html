@@ -1,0 +1,145 @@
+﻿<!-- templates/catalog/brand_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ brand.name }} - марка автомобиля | Autoplaza{% endblock %}
+
+{% block content %}
+<!-- Заголовок марки -->
+<div class="row align-items-center mb-5">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'cars:car_brand_list' %}">Марки</a></li>
+                <li class="breadcrumb-item active">{{ brand.name }}</li>
+            </ol>
+        </nav>
+        <h1 class="display-5">{{ brand.name }}</h1>
+        <div class="d-flex align-items-center mb-3">
+            <span class="badge bg-primary me-2">{{ brand.get_country_display }}</span>
+            <span class="text-muted">
+                <i class="fas fa-car"></i> {{ models_count }} моделей
+            </span>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="brand-logo-display">
+            {% if brand.logo %}
+                <img src="{{ brand.logo.url }}" alt="{{ brand.name }}"
+                     class="img-fluid rounded" style="max-height: 150px;">
+            {% else %}
+                <div class="display-1 text-primary">
+                    {{ brand.name|slice:":1"|upper }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Логотип марки (крупно, если есть) -->
+{% if brand.logo %}
+<div class="card mb-4">
+    <div class="card-body text-center">
+        <img src="{{ brand.logo.url }}" alt="{{ brand.name }}"
+             class="img-fluid rounded" style="max-height: 300px;">
+    </div>
+</div>
+{% endif %}
+
+<!-- Описание марки -->
+{% if brand.description %}
+<div class="card mb-5">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> О марке {{ brand.name }}</h5>
+    </div>
+    <div class="card-body">
+        <p class="card-text">{{ brand.description|linebreaks }}</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Модели по типам кузова -->
+{% for body_type, models in body_types.items %}
+<div class="mb-5">
+    <h3 class="mb-4">
+        {{ body_type|title }}
+        <small class="text-muted">({{ models|length }} моделей)</small>
+    </h3>
+
+    <div class="row">
+        {% for model in models %}
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <!-- Изображение модели с проверкой -->
+                      <div class="text-center mb-3">
+                        {% if model.image and model.image.url %}
+                            <img src="{{ model.image.url }}"
+                                 alt="{{ model.name }}"
+                                 class="img-fluid rounded blur-up"
+                                 loading="lazy"
+                                 style="background: url('{{ model.image.url }}?width=20&blur=10') no-repeat center/cover;">
+                        {% else %}
+                            <div class="placeholder-model-image" style="height: 120px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px;">
+                                <div>
+                                    <i class="fas fa-car fa-2x text-secondary mb-2"></i>
+                                    <p class="mb-0 text-muted">{{ model.name }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <h5 class="card-title">{{ model.name }}</h5>
+                    <div class="d-flex justify-content-between text-muted mb-3">
+                        <small>
+                            <i class="fas fa-calendar"></i>
+                            {% if model.year_start %}
+                            С {{ model.year_start }} года
+                            {% if model.year_end %} по {{ model.year_end }} год{% endif %}
+                            {% else %}
+                            Год выпуска не указан
+                            {% endif %}
+                        </small>
+                        {% if model.is_active %}
+                        <span class="badge bg-success">Активна</span>
+                        {% endif %}
+                    </div>
+                    <!-- ИСПРАВЛЕННАЯ ССЫЛКА -->
+                    <a href="{% url 'cars:car_model_detail' model.slug %}" class="btn btn-outline-primary btn-sm">
+                        Подробнее <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% empty %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> Модели для марки {{ brand.name }} ещё не добавлены.
+</div>
+{% endfor %}
+
+<!-- Навигация -->
+<div class="d-flex justify-content-between mt-5">
+    {% with prev_brand=brand.get_previous_by_created_at %}
+        {% if prev_brand %}
+        <!-- ИСПРАВЛЕННАЯ ССЫЛКА -->
+        <a href="{% url 'cars:car_brand_detail' prev_brand.slug %}" class="btn btn-outline-secondary">
+            <i class="fas fa-chevron-left"></i> {{ prev_brand.name }}
+        </a>
+        {% else %}
+        <div></div>
+        {% endif %}
+    {% endwith %}
+
+    {% with next_brand=brand.get_next_by_created_at %}
+        {% if next_brand %}
+        <!-- ИСПРАВЛЕННАЯ ССЫЛКА -->
+        <a href="{% url 'cars:car_brand_detail' next_brand.slug %}" class="btn btn-outline-secondary">
+            {{ next_brand.name }} <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    {% endwith %}
+</div>
+{% endblock %}

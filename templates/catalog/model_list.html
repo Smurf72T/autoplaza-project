@@ -1,0 +1,107 @@
+﻿<!-- templates/catalog/model_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Модели автомобилей | Autoplaza{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Модели автомобилей</h1>
+
+<!-- Фильтры -->
+<div class="search-box mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <input type="text" name="search" class="form-control" placeholder="Поиск моделей..." 
+                   value="{{ request.GET.search }}">
+        </div>
+        <div class="col-md-3">
+            <select name="brand" class="form-select">
+                <option value="">Все марки</option>
+                {% for brand in all_brands %}
+                <option value="{{ brand.id }}" 
+                        {% if request.GET.brand == brand.id|stringformat:'i' %}selected{% endif %}>
+                    {{ brand.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="body_type" class="form-select">
+                <option value="">Все типы кузова</option>
+                {% for body_type in body_types %}
+                <option value="{{ body_type }}" 
+                        {% if request.GET.body_type == body_type %}selected{% endif %}>
+                    {{ body_type }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter"></i> Фильтровать
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Список моделей -->
+<div class="row">
+    {% for model in models %}
+    <div class="col-md-3 mb-4 fade-in">
+        <div class="car-card">
+             <!-- Изображение модели -->
+            <div class="car-card-img">
+                {% if model.image and model.image.url %}
+                    <img src="{{ model.image.url }}"
+                         alt="{{ model.name }}"
+                         class="img-fluid rounded blur-up"
+                         loading="lazy"
+                         style="background: url('{{ model.image.url }}?width=20&blur=10') no-repeat center/cover;">
+                {% else %}
+                    <div class="placeholder-image">
+                        <i class="fas fa-car fa-3x"></i>
+                        <p>{{ model.brand.name|first }}{{ model.name|first }}</p>
+                    </div>
+                {% endif %}
+
+                <!-- Бейдж бренда -->
+                <div class="car-brand-logo">
+                    {{ model.brand.name|slice:":1"|upper }}
+                </div>
+            </div>
+
+            <div class="car-card-body">
+                <small class="text-muted d-block mb-1">{{ model.brand.name }}</small>
+                <h5 class="card-title mb-2">{{ model.name }}</h5>
+
+                <div class="mb-3">
+                    {% if model.body_type %}
+                    <span class="badge bg-info mb-1">{{ model.body_type }}</span>
+                    {% endif %}
+                    {% if model.year_start %}
+                    <span class="badge bg-secondary">
+                        <i class="fas fa-calendar"></i> {{ model.year_start }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="mt-auto">
+                    <a href="{% url 'core:car_model_detail' model.slug %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-info-circle"></i> Подробнее
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-warning text-center py-5">
+            <i class="fas fa-search fa-3x mb-3"></i>
+            <h4>Модели не найдены</h4>
+            <p>Попробуйте изменить параметры поиска</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Пагинация временно отключена -->
+{% endblock %}

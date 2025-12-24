@@ -1,0 +1,114 @@
+﻿<!-- templates/core/about.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}О компании Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Заголовок -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 mb-3">О компании Autoplaza</h1>
+                <p class="lead text-muted">Крупнейшая площадка для покупки и продажи автомобилей в России</p>
+            </div>
+
+            <!-- История -->
+            <div class="card border-0 shadow-sm mb-5">
+                <div class="card-body p-5">
+                    <h2 class="h3 mb-4">Наша история</h2>
+                    <p class="mb-4">Autoplaza была основана в 2010 году с целью создать удобную и безопасную платформу для покупки и продажи автомобилей. За годы работы мы помогли тысячам людей найти свой идеальный автомобиль.</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="d-flex mb-3">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-car text-primary fa-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5 class="mb-2">Более 10 лет на рынке</h5>
+                                    <p class="text-muted mb-0">Надежность и опыт</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex mb-3">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-users text-primary fa-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5 class="mb-2">5000+ довольных клиентов</h5>
+                                    <p class="text-muted mb-0">Высокий уровень доверия</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Миссия и ценности -->
+            <div class="row mb-5">
+                <div class="col-md-6 mb-4 mb-md-0">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h3 class="h4 mb-3">Наша миссия</h3>
+                            <p>Мы создаем удобную и безопасную площадку для покупки и продажи автомобилей, где каждый может найти подходящий вариант или продать свой автомобиль быстро и выгодно.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h3 class="h4 mb-3">Наши ценности</h3>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Честность и прозрачность</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Безопасность сделок</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Качество сервиса</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Инновации и развитие</li>
+                                <li><i class="fas fa-check text-success me-2"></i> Забота о клиентах</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Преимущества -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-5">
+                    <h2 class="h3 mb-4">Почему выбирают Autoplaza?</h2>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="icon-wrapper mb-3">
+                                    <i class="fas fa-check-circle fa-2x text-success"></i>
+                                </div>
+                                <h5 class="h6">Проверенные продавцы</h5>
+                                <p class="text-muted small">Все продавцы проходят верификацию</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="icon-wrapper mb-3">
+                                    <i class="fas fa-search fa-2x text-primary"></i>
+                                </div>
+                                <h5 class="h6">Детальный поиск</h5>
+                                <p class="text-muted small">Точные фильтры для быстрого поиска</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="icon-wrapper mb-3">
+                                    <i class="fas fa-shield-alt fa-2x text-warning"></i>
+                                </div>
+                                <h5 class="h6">Безопасность сделок</h5>
+                                <p class="text-muted small">Защита от мошенничества</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,649 @@
+<!-- templates/advertisements/ad_form.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} объявления | Autoplaza
+{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+.select2-container--default .select2-selection--single {
+    height: 38px;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 36px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Хлебные крошки -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'advertisements:ad_list' %}">Объявления</a></li>
+                    <li class="breadcrumb-item active">
+                        {% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} объявления
+                    </li>
+                </ol>
+            </nav>
+
+            <!-- Заголовок -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    {% if form.instance.pk %}
+                    <i class="fas fa-edit me-2"></i>Редактирование объявления
+                    {% else %}
+                    <i class="fas fa-plus-circle me-2"></i>Создание объявления
+                    {% endif %}
+                </h1>
+
+                {% if form.instance.pk %}
+                <a href="{% url 'advertisements:ad_detail' form.instance.slug %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>Просмотр
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Форма -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="ad-form" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Шаги формы -->
+                        <div class="mb-4">
+                            <ul class="nav nav-pills justify-content-center mb-4" id="form-steps" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="step1-tab" data-bs-toggle="pill"
+                                            data-bs-target="#step1" type="button" role="tab">
+                                        <i class="fas fa-car me-2"></i>Основное
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="step2-tab" data-bs-toggle="pill"
+                                            data-bs-target="#step2" type="button" role="tab">
+                                        <i class="fas fa-sliders-h me-2"></i>Характеристики
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="step3-tab" data-bs-toggle="pill"
+                                            data-bs-target="#step3" type="button" role="tab">
+                                        <i class="fas fa-camera me-2"></i>Фотографии
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="step4-tab" data-bs-toggle="pill"
+                                            data-bs-target="#step4" type="button" role="tab">
+                                        <i class="fas fa-check-circle me-2"></i>Завершение
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Содержимое шагов -->
+                        <div class="tab-content" id="form-steps-content">
+                            <!-- Шаг 1: Основная информация -->
+                            <div class="tab-pane fade show active" id="step1" role="tabpanel">
+                                <h4 class="h5 mb-4">Основная информация</h4>
+
+                                <!-- Марка и модель -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="id_brand" class="form-label">Марка *</label>
+                                        <select class="form-select" id="id_brand" name="brand" required>
+                                            <option value="">Выберите марку</option>
+                                            {% for brand in brands %}
+                                            <option value="{{ brand.slug }}"
+                                                {% if form.instance.model and form.instance.model.brand.slug == brand.slug %}selected{% endif %}>
+                                                {{ brand.name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="id_model" class="form-label">Модель *</label>
+                                        <select class="form-select" id="id_model" name="model" required
+                                                {% if not form.instance.model %}disabled{% endif %}>
+                                            <option value="">Выберите модель</option>
+                                            {% if form.instance.model %}
+                                                <option value="{{ form.instance.model.slug }}" selected>
+                                                    {{ form.instance.model.name }}
+                                                </option>
+                                            {% endif %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Заголовок -->
+                                <div class="mb-3">
+                                    {{ form.title|as_crispy_field }}
+                                    <div class="form-text">
+                                        Например: "{{ default_title|default:"Toyota Camry 2015, пробег 100 000 км" }}"
+                                    </div>
+                                </div>
+
+                                <!-- Год и пробег -->
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        {{ form.year|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.mileage|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.mileage_unit|as_crispy_field }}
+                                    </div>
+                                </div>
+
+                                <!-- Кнопки навигации -->
+                                <div class="d-flex justify-content-between mt-4">
+                                    <div></div>
+                                    <button type="button" class="btn btn-primary" onclick="nextStep(2)">
+                                        Далее <i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Шаг 2: Характеристики -->
+                            <div class="tab-pane fade" id="step2" role="tabpanel">
+                                <h4 class="h5 mb-4">Технические характеристики</h4>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.fuel_type|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.transmission|as_crispy_field }}
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.drive_type|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.engine_volume|as_crispy_field }}
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.engine_power|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.color|as_crispy_field }}
+                                    </div>
+                                </div>
+
+                                <!-- VIN -->
+                                <div class="mb-3">
+                                    {{ form.vin|as_crispy_field }}
+                                </div>
+
+                                <!-- Состояние -->
+                                <div class="mb-3">
+                                    {{ form.condition|as_crispy_field }}
+                                </div>
+
+                                <!-- Дополнительные опции -->
+                                <div class="mb-4">
+                                    <label class="form-label">Дополнительные опции</label>
+                                    <div class="row">
+                                        {% for feature in features %}
+                                        <div class="col-md-4 mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="features" value="{{ feature.id }}"
+                                                       id="feature_{{ feature.id }}"
+                                                       {% if feature in form.instance.features.all %}checked{% endif %}>
+                                                <label class="form-check-label" for="feature_{{ feature.id }}">
+                                                    {{ feature.name }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Кнопки навигации -->
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep(1)">
+                                        <i class="fas fa-arrow-left me-2"></i>Назад
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="nextStep(3)">
+                                        Далее <i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Шаг 3: Фотографии -->
+                            <div class="tab-pane fade" id="step3" role="tabpanel">
+                                <h4 class="h5 mb-4">Фотографии автомобиля</h4>
+
+                                <div class="mb-4">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Загрузите качественные фотографии автомобиля. Первая фотография будет главной.
+                                    </div>
+                                </div>
+
+                                <!-- Загрузка фотографий -->
+                                <div class="mb-4">
+                                    <label class="form-label">Фотографии *</label>
+                                    <input type="file" class="form-control" name="photos" multiple
+                                           accept="image/*" id="photo-upload">
+                                    <div class="form-text">
+                                        Можно загрузить до 20 фотографий. Форматы: JPG, PNG, размер не более 5MB каждая.
+                                    </div>
+                                </div>
+
+                                <!-- Предпросмотр -->
+                                <div class="mb-4">
+                                    <div class="photo-preview" id="photo-preview">
+                                        {% if form.instance.photos.all %}
+                                            {% for photo in form.instance.photos.all %}
+                                            <div class="photo-preview-item" data-id="{{ photo.id }}">
+                                                <img src="{{ photo.thumbnail.url }}"
+                                                     alt="Фото {{ forloop.counter }}"
+                                                     class="img-thumbnail">
+                                                <button type="button" class="btn btn-sm btn-danger remove-photo"
+                                                        onclick="removeExistingPhoto({{ photo.id }})">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Кнопки навигации -->
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep(2)">
+                                        <i class="fas fa-arrow-left me-2"></i>Назад
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="nextStep(4)">
+                                        Далее <i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Шаг 4: Завершение -->
+                            <div class="tab-pane fade" id="step4" role="tabpanel">
+                                <h4 class="h5 mb-4">Завершение</h4>
+
+                                <!-- Цена -->
+                                <div class="row mb-4">
+                                    <div class="col-md-8">
+                                        {{ form.price|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check mt-4 pt-2">
+                                            {{ form.is_negotiable }}
+                                            <label class="form-check-label" for="{{ form.is_negotiable.id_for_label }}">
+                                                Возможен торг
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Описание -->
+                                <div class="mb-4">
+                                    {{ form.description|as_crispy_field }}
+                                    <div class="form-text">
+                                        Опишите автомобиль подробно: состояние, историю обслуживания, причины продажи.
+                                    </div>
+                                </div>
+
+                                <!-- Локация -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        {{ form.city|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.region|as_crispy_field }}
+                                    </div>
+                                </div>
+
+                                <!-- Контакты -->
+                                <div class="mb-4">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Контактные данные будут взяты из вашего профиля:
+                                        <strong>{{ user.phone|default:"Телефон не указан" }}</strong>
+                                    </div>
+                                </div>
+
+                                <!-- Кнопки отправки -->
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep(3)">
+                                        <i class="fas fa-arrow-left me-2"></i>Назад
+                                    </button>
+                                    <div>
+                                        {% if form.instance.pk %}
+                                        <button type="submit" name="save_draft" class="btn btn-outline-primary me-2">
+                                            Сохранить черновик
+                                        </button>
+                                        <button type="submit" name="publish" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>Сохранить изменения
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" name="save_draft" class="btn btn-outline-primary me-2">
+                                            Сохранить черновик
+                                        </button>
+                                        <button type="submit" name="publish" class="btn btn-primary">
+                                            <i class="fas fa-paper-plane me-2"></i>Опубликовать
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ошибки формы -->
+                        {% if form.errors %}
+                        <div class="alert alert-danger mt-4">
+                            <h5 class="alert-heading">Исправьте ошибки:</h5>
+                            <ul class="mb-0">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <!-- Информация -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <h5 class="h6 mb-3">
+                        <i class="fas fa-lightbulb me-2 text-warning"></i>Советы по размещению
+                    </h5>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Загружайте качественные фотографии со всех сторон автомобиля
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Укажите реальную цену и будьте готовы к торгу
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Подробно опишите состояние автомобиля и его историю
+                        </li>
+                        <li>
+                            <i class="fas fa-check text-success me-2"></i>
+                            Будьте готовы отвечать на вопросы покупателей
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+// Инициализация Select2
+$(document).ready(function() {
+    $('#id_brand, #id_model, #id_city, #id_region').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+});
+
+// Навигация по шагам формы
+function goToStep(stepNumber) {
+    const stepTab = document.querySelector(`#step${stepNumber}-tab`);
+    if (stepTab) {
+        const tab = new bootstrap.Tab(stepTab);
+        tab.show();
+    }
+}
+
+function nextStep(currentStep) {
+    // Валидация текущего шага
+    if (validateStep(currentStep)) {
+        goToStep(currentStep + 1);
+    }
+}
+
+function prevStep(currentStep) {
+    goToStep(currentStep - 1);
+}
+
+// Валидация шагов
+function validateStep(step) {
+    let isValid = true;
+
+    switch(step) {
+        case 1:
+            const brand = document.getElementById('id_brand');
+            const model = document.getElementById('id_model');
+            const title = document.getElementById('id_title');
+            const year = document.getElementById('id_year');
+            const mileage = document.getElementById('id_mileage');
+
+            if (!brand.value) {
+                showFieldError(brand, 'Выберите марку автомобиля');
+                isValid = false;
+            }
+            if (!model.value) {
+                showFieldError(model, 'Выберите модель автомобиля');
+                isValid = false;
+            }
+            if (!title.value.trim()) {
+                showFieldError(title, 'Введите заголовок объявления');
+                isValid = false;
+            }
+            if (!year.value) {
+                showFieldError(year, 'Укажите год выпуска');
+                isValid = false;
+            }
+            if (!mileage.value) {
+                showFieldError(mileage, 'Укажите пробег');
+                isValid = false;
+            }
+            break;
+
+        case 3:
+            const photoUpload = document.getElementById('photo-upload');
+            const existingPhotos = document.querySelectorAll('.photo-preview-item').length;
+
+            if (!photoUpload.files.length && !existingPhotos) {
+                alert('Загрузите хотя бы одну фотографию автомобиля');
+                isValid = false;
+            }
+            break;
+    }
+
+    return isValid;
+}
+
+// Показать ошибку поля
+function showFieldError(field, message) {
+    field.classList.add('is-invalid');
+
+    let feedback = field.nextElementSibling;
+    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+        feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback';
+        field.parentNode.appendChild(feedback);
+    }
+    feedback.textContent = message;
+}
+
+// Загрузка моделей при выборе марки
+document.getElementById('id_brand').addEventListener('change', function() {
+    const brandSlug = this.value;
+    const modelSelect = document.getElementById('id_model');
+
+    if (!brandSlug) {
+        modelSelect.innerHTML = '<option value="">Выберите модель</option>';
+        modelSelect.disabled = true;
+        return;
+    }
+
+    modelSelect.disabled = true;
+    modelSelect.innerHTML = '<option value="">Загрузка...</option>';
+
+    fetch(`/api/models/?brand=${brandSlug}`)
+        .then(response => response.json())
+        .then(data => {
+            let options = '<option value="">Выберите модель</option>';
+            data.forEach(model => {
+                options += `<option value="${model.slug}">${model.name}</option>`;
+            });
+
+            modelSelect.innerHTML = options;
+            modelSelect.disabled = false;
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            modelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+        });
+});
+
+// Предпросмотр фотографий
+document.getElementById('photo-upload').addEventListener('change', function(event) {
+    const preview = document.getElementById('photo-preview');
+    const files = event.target.files;
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Проверка размера файла
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`Файл "${file.name}" слишком большой. Максимальный размер: 5MB`);
+            continue;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'photo-preview-item';
+
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'img-thumbnail';
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-danger remove-photo';
+            btn.innerHTML = '<i class="fas fa-times"></i>';
+            btn.onclick = function() {
+                div.remove();
+                updateFileInput();
+            };
+
+            div.appendChild(img);
+            div.appendChild(btn);
+            preview.appendChild(div);
+        };
+
+        reader.readAsDataURL(file);
+    }
+});
+
+// Обновление input file после удаления предпросмотра
+function updateFileInput() {
+    // Эта функция может быть сложной для реализации без перезагрузки страницы
+    // В реальном приложении используйте FormData или библиотеку для работы с файлами
+}
+
+// Удаление существующей фотографии
+function removeExistingPhoto(photoId) {
+    if (confirm('Удалить эту фотографию?')) {
+        fetch(`/api/photos/${photoId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector(`.photo-preview-item[data-id="${photoId}"]`).remove();
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+        });
+    }
+}
+
+// Подсчет символов в описании
+document.getElementById('id_description').addEventListener('input', function() {
+    const length = this.value.length;
+    const counter = document.getElementById('description-counter') ||
+                    (function() {
+                        const div = document.createElement('div');
+                        div.id = 'description-counter';
+                        div.className = 'form-text';
+                        this.parentNode.appendChild(div);
+                        return div;
+                    }.bind(this)());
+
+    counter.textContent = `${length} символов`;
+
+    if (length < 50) {
+        counter.className = 'form-text text-danger';
+    } else if (length < 100) {
+        counter.className = 'form-text text-warning';
+    } else {
+        counter.className = 'form-text text-success';
+    }
+});
+
+// Автозаполнение цены при вводе пробега
+document.getElementById('id_mileage').addEventListener('input', function() {
+    if (!this.value || !document.getElementById('id_year').value) return;
+
+    // Пример простой логики для предложения цены
+    const mileage = parseInt(this.value);
+    const year = parseInt(document.getElementById('id_year').value);
+    const currentYear = new Date().getFullYear();
+    const age = currentYear - year;
+
+    // Базовая цена (можно сделать более сложную логику)
+    let suggestedPrice = 500000; // базовая цена
+
+    // Корректировка по году
+    suggestedPrice -= age * 50000;
+
+    // Корректировка по пробегу
+    suggestedPrice -= (mileage / 10000) * 10000;
+
+    // Ограничения
+    suggestedPrice = Math.max(suggestedPrice, 100000);
+
+    // Заполняем поле цены, если оно пустое
+    const priceField = document.getElementById('id_price');
+    if (!priceField.value) {
+        priceField.value = Math.round(suggestedPrice / 10000) * 10000; // округляем до 10 тысяч
+    }
+});
+</script>
+{% endblock %}

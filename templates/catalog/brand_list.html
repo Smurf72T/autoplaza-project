@@ -1,0 +1,270 @@
+<!-- templates/catalog/brand_list.html -->
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<style>
+/* КРИТИЧЕСКИЕ СТИЛИ ДЛЯ СТРАНИЦЫ БРЕНДОВ */
+.page-brands .car-card-img {
+    height: 180px !important;
+    min-height: 180px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+    overflow: hidden !important;
+}
+
+.page-brands .car-card-img .logo-container {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.page-brands .brand-logo {
+    max-width: 150px !important;
+    max-height: 120px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+}
+
+.page-brands .brand-logo[src$=".svg"] {
+    max-width: 140px !important;
+    max-height: 100px !important;
+}
+
+/* Особо для больших SVG */
+.page-brands .brand-logo[src*="bmw"],
+.page-brands .brand-logo[src*="mercedes"] {
+    max-width: 130px !important;
+    max-height: 90px !important;
+}
+
+@media (max-width: 768px) {
+    .page-brands .car-card-img {
+        height: 150px !important;
+        min-height: 150px !important;
+        padding: 15px !important;
+    }
+
+    .page-brands .brand-logo {
+        max-width: 120px !important;
+        max-height: 90px !important;
+    }
+
+    .page-brands .brand-logo[src$=".svg"] {
+        max-width: 110px !important;
+        max-height: 80px !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block title %}Марки автомобилей | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="page-brands">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Марки автомобилей</h1>
+        <span class="badge bg-primary">{{ brands.count }} марок</span>
+    </div>
+
+    <!-- Поиск -->
+    <div class="search-box mb-4">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" name="search" class="form-control" placeholder="Поиск марки..."
+                       value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-4">
+                <select name="country" class="form-select">
+                    <option value="">Все страны</option>
+                    {% for stat in country_stats %}
+                    <option value="{{ stat.country }}"
+                            {% if request.GET.country == stat.country %}selected{% endif %}>
+                        {{ stat.get_country_display }} ({{ stat.count }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Фильтровать
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Список марок -->
+    <div class="row">
+        {% for brand in brands %}
+        <div class="col-md-4 mb-4 fade-in">
+            <div class="car-card h-100">
+                <!-- Логотип марки -->
+                <div class="car-card-img">
+                    <div class="logo-container">
+                        {% if brand.logo and brand.logo.url %}
+                            <img src="{{ brand.logo.url }}"
+                                 alt="{{ brand.name }}"
+                                 class="brand-logo"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\"logo-placeholder\"><div class=\"initial\">{{ brand.name.0|upper }}</div><small>Нет логотипа</small></div>';">
+                        {% else %}
+                            <div class="logo-placeholder">
+                                <div class="initial">{{ brand.name.0|upper }}</div>
+                                <small>Нет логотипа</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="car-card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h4 class="mb-1">{{ brand.name }}</h4>
+                            <span class="badge bg-primary">
+                                {{ brand.get_country_display }}
+                            </span>
+                        </div>
+                        <span class="badge bg-secondary">{{ brand.models_count }} моделей</span>
+                    </div>
+
+                    <p class="card-text">{{ brand.description|truncatewords:20|default:"Описание отсутствует" }}</p>
+
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'cars:car_brand_detail' brand.slug %}" class="btn btn-primary">
+                                <i class="fas fa-arrow-right"></i> Подробнее
+                            </a>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> {{ brand.created_at|date:"d.m.Y" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-warning text-center py-5">
+                <i class="fas fa-car fa-3x mb-3"></i>
+                <h4>Марок не найдено</h4>
+                <p>Попробуйте изменить параметры поиска</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    {% if is_paginated %}
+    <nav aria-label="Навигация по страницам">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="fas fa-chevron-left"></i> Назад
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    Вперед <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- Статистика по странам -->
+    <div class="card mt-5">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-globe"></i> Марки по странам</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for stat in country_stats %}
+                <div class="col-md-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>{{ stat.get_country_display }}</span>
+                        <span class="badge bg-primary rounded-pill">{{ stat.count }}</span>
+                    </div>
+                    <div class="progress">
+                        {% with total=brands.count %}
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {% widthratio stat.count total 100 %}%"
+                             aria-valuenow="{{ stat.count }}"
+                             aria-valuemin="0"
+                             aria-valuemax="{{ total }}">
+                        </div>
+                        {% endwith %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Функция для автоматической регулировки размера логотипов
+    function adjustLogoSizes() {
+        const logos = document.querySelectorAll('.page-brands .brand-logo');
+
+        logos.forEach(logo => {
+            // Рассчитываем размеры в зависимости от ширины экрана
+            const screenWidth = window.innerWidth;
+            let maxWidth, maxHeight;
+
+            if (screenWidth >= 992) {
+                maxWidth = logo.src.includes('.svg') ? 140 : 150;
+                maxHeight = logo.src.includes('.svg') ? 100 : 120;
+            } else if (screenWidth >= 768) {
+                maxWidth = logo.src.includes('.svg') ? 110 : 120;
+                maxHeight = logo.src.includes('.svg') ? 80 : 90;
+            } else {
+                maxWidth = logo.src.includes('.svg') ? 90 : 100;
+                maxHeight = logo.src.includes('.svg') ? 60 : 70;
+            }
+
+            logo.style.maxWidth = maxWidth + 'px';
+            logo.style.maxHeight = maxHeight + 'px';
+            logo.style.width = 'auto';
+            logo.style.height = 'auto';
+        });
+    }
+
+    // Запускаем при загрузке
+    adjustLogoSizes();
+
+    // Запускаем при изменении размера окна
+    window.addEventListener('resize', adjustLogoSizes);
+
+    // Запускаем после полной загрузки страницы
+    window.addEventListener('load', adjustLogoSizes);
+});
+</script>
+{% endblock %}
+
+{% endblock %}

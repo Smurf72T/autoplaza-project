@@ -1,0 +1,199 @@
+<!-- templates/403.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Доступ запрещен (403) | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 text-center">
+            <!-- Иконка ошибки -->
+            <div class="mb-4">
+                <i class="fas fa-ban fa-5x text-danger"></i>
+            </div>
+
+            <!-- Заголовок -->
+            <h1 class="display-4 fw-bold text-muted mb-3">403</h1>
+            <h2 class="h3 mb-4">Доступ запрещен</h2>
+
+            <!-- Описание -->
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading">
+                    <i class="fas fa-lock me-2"></i>У вас нет прав для доступа к этой странице
+                </h4>
+                <p class="mb-0">
+                    Вы пытаетесь получить доступ к ресурсу, для просмотра которого требуются специальные права.
+                </p>
+            </div>
+
+            <!-- Возможные причины -->
+            <div class="card border-0 shadow-sm mb-5">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Возможные причины:</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-user-shield text-primary fa-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Недостаточно прав</h6>
+                                    <p class="small text-muted mb-0">
+                                        Эта страница доступна только авторизованным пользователям с определенными правами.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-user-slash text-primary fa-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Требуется авторизация</h6>
+                                    <p class="small text-muted mb-0">
+                                        Возможно, вы не вошли в систему или ваша сессия истекла.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-primary fa-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Ограниченный доступ</h6>
+                                    <p class="small text-muted mb-0">
+                                        Ресурс может быть доступен только владельцу или администраторам.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-cogs text-primary fa-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Технические ограничения</h6>
+                                    <p class="small text-muted mb-0">
+                                        Возможно, ресурс временно недоступен или находится на техническом обслуживании.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Решения проблемы -->
+            <div class="row mb-5">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-sign-in-alt fa-3x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Войти в систему</h5>
+                            <p class="card-text small">Авторизуйтесь, если у вас есть учетная запись</p>
+                            <a href="{% url 'users:login' %}?next={{ request.path }}" class="btn btn-outline-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Войти
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-user-plus fa-3x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Зарегистрироваться</h5>
+                            <p class="card-text small">Создайте новую учетную запись</p>
+                            <a href="{% url 'users:register' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus me-2"></i>Регистрация
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-headset fa-3x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Связаться с нами</h5>
+                            <p class="card-text small">Если считаете, что это ошибка</p>
+                            <a href="{% url 'core:contact' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope me-2"></i>Написать
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-4">
+                <a href="{% url 'core:home' %}" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-home me-2"></i>На главную
+                </a>
+                <a href="{% url 'advertisements:ad_list' %}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-car me-2"></i>Все объявления
+                </a>
+                <button onclick="window.history.back()" class="btn btn-outline-secondary btn-lg px-4">
+                    <i class="fas fa-arrow-left me-2"></i>Назад
+                </button>
+            </div>
+
+            <!-- Техническая информация (только для администраторов) -->
+            {% if user.is_staff or user.is_superuser %}
+            <div class="mt-5 pt-4 border-top">
+                <h6 class="mb-3">Техническая информация (для администратора):</h6>
+                <div class="text-start">
+                    <p class="small text-muted mb-1">
+                        <strong>Путь:</strong> {{ request.path }}
+                    </p>
+                    <p class="small text-muted mb-1">
+                        <strong>Пользователь:</strong> {{ user.username }} ({{ user.get_full_name }})
+                    </p>
+                    <p class="small text-muted mb-1">
+                        <strong>Группы:</strong> {{ user.groups.all|join:", "|default:"Нет" }}
+                    </p>
+                    <p class="small text-muted mb-0">
+                        <strong>Суперпользователь:</strong> {{ user.is_superuser|yesno:"Да,Нет" }}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Автоматический редирект для авторизованных пользователей
+document.addEventListener('DOMContentLoaded', function() {
+    // Если пользователь авторизован, но получил 403, предлагаем выйти
+    if ({% if user.is_authenticated %}true{% else %}false{% endif %}) {
+        const logoutBtn = document.createElement('button');
+        logoutBtn.className = 'btn btn-warning btn-sm mt-3';
+        logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt me-2"></i>Выйти и попробовать снова';
+        logoutBtn.onclick = function() {
+            window.location.href = "{% url 'users:logout' %}?next={{ request.path }}";
+        };
+
+        const actionsDiv = document.querySelector('.d-grid');
+        if (actionsDiv) {
+            actionsDiv.parentNode.insertBefore(logoutBtn, actionsDiv.nextSibling);
+        }
+    }
+});
+</script>
+{% endblock %}

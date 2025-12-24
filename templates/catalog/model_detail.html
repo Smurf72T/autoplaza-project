@@ -1,0 +1,93 @@
+﻿<!-- templates/catalog/model_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ model.brand.name }} {{ model.name }} - Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'cars:car_brand_list' %}">Марки</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'cars:car_brand_detail' model.brand.slug %}">{{ model.brand.name }}</a></li>
+            <li class="breadcrumb-item active">{{ model.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Заголовок модели -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ model.brand.name }} {{ model.name }}</h1>
+            {% if model.description %}
+                <p class="lead">{{ model.description }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Информация</h5>
+                    {% if model.year_start %}
+                        <p class="mb-1"><strong>Начало производства:</strong> {{ model.year_start }}</p>
+                    {% endif %}
+                    {% if model.year_end %}
+                        <p class="mb-1"><strong>Конец производства:</strong> {{ model.year_end }}</p>
+                    {% endif %}
+                    {% if model.body_type %}
+                        <p class="mb-1"><strong>Тип кузова:</strong> {{ model.body_type }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Изображение модели (если есть) -->
+    {% if model.image and model.image.url %}
+    <div class="mb-4">
+        <img src="{{ model.image.url }}"
+             alt="{{ model.name }}"
+             class="img-fluid rounded blur-up"
+             loading="lazy"
+             style="background: url('{{ model.image.url }}?width=20&blur=10') no-repeat center/cover;">
+    </div>
+    {% else %}
+    <div class="mb-4">
+        <div class="placeholder-model-image text-center py-5">
+            <i class="fas fa-car fa-5x text-secondary mb-3"></i>
+            <h3>{{ model.brand.name }} {{ model.name }}</h3>
+            <p class="text-muted">Изображение отсутствует</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Объявления для этой модели -->
+    <h2 class="mb-4">Объявления ({{ ads.paginator.count }})</h2>
+
+    {% if ads %}
+        <div class="row">
+            {% for ad in ads %}
+                <div class="col-md-4 mb-4">
+                    {% include 'advertisements/partials/ad_card.html' with ad=ad %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if is_paginated %}
+            {% include 'includes/pagination.html' %}
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Нет активных объявлений для этой модели.
+        </div>
+    {% endif %}
+
+    <!-- Ссылка на поиск -->
+    <div class="mt-4 text-center">
+        <a href="{% url 'advertisements:ad_list' %}?model={{ model.id }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-search"></i> Искать {{ model.brand.name }} {{ model.name }}
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+<!-- templates/advertisements/favorites.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Избранные объявления | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-2">Избранные объявления</h1>
+            <p class="text-muted mb-0">Ваши сохраненные объявления</p>
+        </div>
+        <div>
+            <a href="{% url 'advertisements:ad_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-search me-2"></i>Найти еще
+            </a>
+        </div>
+    </div>
+
+    {% if favorites %}
+        <!-- Статистика -->
+        <div class="alert alert-info mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-heart fa-lg me-3 text-danger"></i>
+                <div>
+                    <strong>{{ favorites.paginator.count }}</strong> объявлений в избранном
+                    {% if favorites.paginator.count > 1 %}
+                    <span class="mx-2">•</span>
+                    <span class="text-muted">Суммарная стоимость:
+                        <strong>{{ total_price|intcomma }} ₽</strong>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Список избранного -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-5">
+            {% for favorite in favorites %}
+            <div class="col" id="favorite-{{ favorite.ad.id }}">
+                <div class="card ad-card h-100">
+                    <!-- Кнопка удаления -->
+                    <div class="position-absolute top-0 end-0 p-2" style="z-index: 10;">
+                        <button class="btn btn-sm btn-light remove-favorite"
+                                onclick="removeFromFavorites({{ favorite.ad.id }})"
+                                title="Удалить из избранного">
+                            <i class="fas fa-times text-danger"></i>
+                        </button>
+                    </div>
+
+                    <!-- Карточка объявления -->
+                    {% include 'advertisements/partials/ad_card.html' with ad=favorite.ad %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if is_paginated %}
+            {% include 'includes/pagination.html' with page_obj=favorites %}
+        {% endif %}
+    {% else %}
+        <!-- Пустое состояние -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-heart fa-5x text-muted"></i>
+            </div>
+            <h3 class="h4 mb-3">Нет избранных объявлений</h3>
+            <p class="text-muted mb-4">
+                Добавляйте понравившиеся объявления в избранное,
+                чтобы не потерять их и сравнивать между собой.
+            </p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'advertisements:ad_list' %}" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>Найти автомобили
+                </a>
+                <a href="{% url 'cars:brand_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-car me-2"></i>Посмотреть марки
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Удаление из избранного
+function removeFromFavorites(adId) {
+    if (!confirm('Удалить это объявление из избранного?')) {
+        return;
+    }
+
+    fetch(`/api/favorites/${adId}/remove/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const element = document.getElementById(`favorite-${adId}`);
+            if (element) {
+                // Анимация удаления
+                element.style.transition = 'opacity 0.3s, transform 0.3s';
+                element.style.opacity = '0';
+                element.style.transform = 'scale(0.9)';
+
+                setTimeout(() => {
+                    element.remove();
+
+                    // Проверяем, остались ли еще объявления
+                    const remaining = document.querySelectorAll('.col[id^="favorite-"]').length;
+                    if (remaining === 0) {
+                        location.reload(); // Перезагружаем для показа пустого состояния
+                    }
+                }, 300);
+            }
+        } else {
+            alert('Ошибка при удалении из избранного');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при удалении из избранного');
+    });
+}
+
+// Массовое удаление (если нужно)
+function clearAllFavorites() {
+    if (!confirm('Удалить все объявления из избранного?')) {
+        return;
+    }
+
+    fetch('/api/favorites/clear/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+</script>
+{% endblock %}

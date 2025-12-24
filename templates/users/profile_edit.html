@@ -1,0 +1,398 @@
+<!-- templates/users/profile_edit.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Редактирование профиля | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Боковое меню -->
+        <div class="col-lg-3 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Настройки профиля</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'users:profile' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-circle me-2"></i>Мой профиль
+                    </a>
+                    <a href="{% url 'users:profile_edit' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-edit me-2"></i>Редактировать профиль
+                    </a>
+                    <a href="{% url 'users:password_change' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-key me-2"></i>Сменить пароль
+                    </a>
+                    <a href="{% url 'advertisements:ad_list' %}?owner={{ user.id }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-car me-2"></i>Мои объявления
+                    </a>
+                    <a href="{% url 'advertisements:favorites' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-heart me-2"></i>Избранное
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>Редактирование профиля
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Сообщения об ошибках -->
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-exclamation-circle me-2"></i>Исправьте ошибки:
+                            </h6>
+                            <ul class="mb-0">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <!-- Основная информация -->
+                        <div class="row">
+                            <!-- Аватар -->
+                            <div class="col-md-4 mb-4">
+                                <div class="text-center">
+                                    <div class="avatar-container mb-3">
+                                        {% if user.avatar %}
+                                        <img src="{{ user.avatar.url }}"
+                                             alt="{{ user.get_full_name }}"
+                                             class="rounded-circle img-fluid"
+                                             style="width: 150px; height: 150px; object-fit: cover;"
+                                             id="avatar-preview">
+                                        {% else %}
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto"
+                                             style="width: 150px; height: 150px; font-size: 3rem;"
+                                             id="avatar-preview">
+                                            {{ user.get_full_name|slice:":1"|upper }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="{{ form.avatar.id_for_label }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-camera me-2"></i>Сменить фото
+                                        </label>
+                                        <input type="file"
+                                               class="d-none"
+                                               id="{{ form.avatar.id_for_label }}"
+                                               name="{{ form.avatar.name }}"
+                                               accept="image/*"
+                                               onchange="previewAvatar(this)">
+                                        {% if user.avatar %}
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm"
+                                                onclick="removeAvatar()">
+                                            <i class="fas fa-trash me-2"></i>Удалить
+                                        </button>
+                                        <input type="hidden" name="avatar-clear" id="avatar-clear" value="0">
+                                        {% endif %}
+                                    </div>
+
+                                    <p class="text-muted small mb-0">
+                                        Рекомендуемый размер: 300×300 пикселей<br>
+                                        Форматы: JPG, PNG, GIF
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Поля формы -->
+                            <div class="col-md-8">
+                                <!-- Имя и фамилия -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                            Имя *
+                                        </label>
+                                        <input type="text"
+                                               class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+                                               id="{{ form.first_name.id_for_label }}"
+                                               name="{{ form.first_name.name }}"
+                                               value="{{ form.first_name.value|default:'' }}"
+                                               required>
+                                        {% if form.first_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.first_name.errors.0 }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                            Фамилия *
+                                        </label>
+                                        <input type="text"
+                                               class="form-control {% if form.last_name.errors %}is-invalid{% endif %}"
+                                               id="{{ form.last_name.id_for_label }}"
+                                               name="{{ form.last_name.name }}"
+                                               value="{{ form.last_name.value|default:'' }}"
+                                               required>
+                                        {% if form.last_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.last_name.errors.0 }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Email и телефон -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                                            Email *
+                                        </label>
+                                        <input type="email"
+                                               class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                                               id="{{ form.email.id_for_label }}"
+                                               name="{{ form.email.name }}"
+                                               value="{{ form.email.value|default:'' }}"
+                                               required>
+                                        {% if form.email.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.email.errors.0 }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                            Телефон
+                                        </label>
+                                        <input type="tel"
+                                               class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                                               id="{{ form.phone.id_for_label }}"
+                                               name="{{ form.phone.name }}"
+                                               value="{{ form.phone.value|default:'' }}"
+                                               placeholder="+7 (XXX) XXX-XX-XX">
+                                        {% if form.phone.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.phone.errors.0 }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="form-text">
+                                            Для связи по объявлениям
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Город -->
+                                <div class="mb-3">
+                                    <label for="{{ form.city.id_for_label }}" class="form-label">
+                                        Город
+                                    </label>
+                                    <input type="text"
+                                           class="form-control {% if form.city.errors %}is-invalid{% endif %}"
+                                           id="{{ form.city.id_for_label }}"
+                                           name="{{ form.city.name }}"
+                                           value="{{ form.city.value|default:'' }}"
+                                           placeholder="Москва">
+                                    {% if form.city.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.city.errors.0 }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- О себе -->
+                                <div class="mb-4">
+                                    <label for="{{ form.bio.id_for_label }}" class="form-label">
+                                        О себе
+                                    </label>
+                                    <textarea class="form-control {% if form.bio.errors %}is-invalid{% endif %}"
+                                              id="{{ form.bio.id_for_label }}"
+                                              name="{{ form.bio.name }}"
+                                              rows="4"
+                                              placeholder="Расскажите немного о себе...">{{ form.bio.value|default:'' }}</textarea>
+                                    {% if form.bio.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.bio.errors.0 }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Максимум 500 символов. <span id="bio-counter">0/500</span>
+                                    </div>
+                                </div>
+
+                                <!-- Настройки уведомлений -->
+                                <div class="mb-4">
+                                    <h6 class="border-bottom pb-2 mb-3">
+                                        <i class="fas fa-bell me-2"></i>Настройки уведомлений
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch mb-2">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       id="notify_new_messages"
+                                                       name="notify_new_messages"
+                                                       {% if form.notify_new_messages.value %}checked{% endif %}>
+                                                <label class="form-check-label" for="notify_new_messages">
+                                                    Новые сообщения
+                                                </label>
+                                            </div>
+                                            <div class="form-check form-switch mb-2">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       id="notify_ad_updates"
+                                                       name="notify_ad_updates"
+                                                       {% if form.notify_ad_updates.value %}checked{% endif %}>
+                                                <label class="form-check-label" for="notify_ad_updates">
+                                                    Обновления по объявлениям
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch mb-2">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       id="notify_newsletter"
+                                                       name="notify_newsletter"
+                                                       {% if form.notify_newsletter.value %}checked{% endif %}>
+                                                <label class="form-check-label" for="notify_newsletter">
+                                                    Новости и акции
+                                                </label>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       id="notify_similar_ads"
+                                                       name="notify_similar_ads"
+                                                       {% if form.notify_similar_ads.value %}checked{% endif %}>
+                                                <label class="form-check-label" for="notify_similar_ads">
+                                                    Похожие объявления
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Кнопки -->
+                                <div class="d-flex justify-content-between">
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="fas fa-save me-2"></i>Сохранить изменения
+                                    </button>
+                                    <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Отмена
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Предпросмотр аватара
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('avatar-preview');
+            if (preview.tagName === 'IMG') {
+                preview.src = e.target.result;
+            } else {
+                // Заменяем div на img
+                const img = document.createElement('img');
+                img.id = 'avatar-preview';
+                img.src = e.target.result;
+                img.className = 'rounded-circle img-fluid';
+                img.style = 'width: 150px; height: 150px; object-fit: cover;';
+                preview.parentNode.replaceChild(img, preview);
+            }
+        }
+        reader.readAsDataURL(input.files[0]);
+
+        // Сбрасываем флаг удаления
+        document.getElementById('avatar-clear').value = '0';
+    }
+}
+
+// Удаление аватара
+function removeAvatar() {
+    if (confirm('Удалить текущую фотографию профиля?')) {
+        const preview = document.getElementById('avatar-preview');
+        const div = document.createElement('div');
+        div.id = 'avatar-preview';
+        div.className = 'rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto';
+        div.style = 'width: 150px; height: 150px; font-size: 3rem;';
+        div.textContent = '{{ user.get_full_name|slice:":1"|upper }}';
+        preview.parentNode.replaceChild(div, preview);
+
+        // Скрываем input файла и устанавливаем флаг удаления
+        document.getElementById('{{ form.avatar.id_for_label }}').value = '';
+        document.getElementById('avatar-clear').value = '1';
+    }
+}
+
+// Счетчик символов для "О себе"
+const bioTextarea = document.getElementById('{{ form.bio.id_for_label }}');
+const bioCounter = document.getElementById('bio-counter');
+
+if (bioTextarea && bioCounter) {
+    function updateBioCounter() {
+        const length = bioTextarea.value.length;
+        bioCounter.textContent = `${length}/500`;
+
+        if (length > 500) {
+            bioCounter.classList.add('text-danger');
+        } else {
+            bioCounter.classList.remove('text-danger');
+        }
+    }
+
+    bioTextarea.addEventListener('input', updateBioCounter);
+    updateBioCounter(); // Инициализация
+}
+
+// Маска для телефона
+const phoneInput = document.getElementById('{{ form.phone.id_for_label }}');
+if (phoneInput) {
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+
+        if (value.length > 0) {
+            if (!value.startsWith('7') && !value.startsWith('8')) {
+                value = '7' + value;
+            }
+
+            let formatted = '+7 (';
+
+            if (value.length > 1) {
+                formatted += value.substring(1, 4);
+            }
+            if (value.length >= 4) {
+                formatted += ') ' + value.substring(4, 7);
+            }
+            if (value.length >= 7) {
+                formatted += '-' + value.substring(7, 9);
+            }
+            if (value.length >= 9) {
+                formatted += '-' + value.substring(9, 11);
+            }
+
+            e.target.value = formatted;
+        }
+    });
+}
+</script>
+{% endblock %}

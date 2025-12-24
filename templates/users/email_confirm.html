@@ -1,0 +1,51 @@
+<!-- templates/users/email_confirm.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Подтверждение email | Autoplaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5 text-center">
+                    {% if success %}
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h1 class="h3 mb-3">Email подтвержден!</h1>
+                    <p class="text-muted mb-4">
+                        Ваш email успешно подтвержден. Теперь вы можете пользоваться всеми функциями сайта.
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'core:home' %}" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>На главную
+                        </a>
+                        <a href="{% url 'advertisements:ad_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-search me-2"></i>Найти автомобили
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-circle fa-4x text-warning"></i>
+                    </div>
+                    <h1 class="h3 mb-3">Ошибка подтверждения</h1>
+                    <p class="text-muted mb-4">
+                        Ссылка для подтверждения email недействительна или срок её действия истек.
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'users:login' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Войти
+                        </a>
+                        <a href="{% url 'users:register' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus me-2"></i>Зарегистрироваться
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Копирование зависимостей
+COPY requirements.txt requirements-dev.txt ./
+
+# Установка Python зависимостей
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    pip install -r requirements-dev.txt
+
+# Копирование проекта
+COPY . .
+
+# Создание пользователя
+RUN useradd -m -u 1000 django && \
+    chown -R django:django /app
+
+USER django
+
+# Точка входа
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
