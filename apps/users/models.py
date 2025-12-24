@@ -11,8 +11,6 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
-
 
 class UserManager(DjangoUserManager):
     """Кастомный менеджер пользователей"""
@@ -39,9 +37,10 @@ class User(AbstractUser):
     """Единая кастомная модель пользователя для Autoplaza"""
 
     class Meta:
-        db_table = 'users'
+        db_table = 'users_user'
         verbose_name = _('Пользователь')
         verbose_name_plural = _('Пользователи')
+        ordering = ['-date_joined']
 
     # Исправляем конфликт related_name
     groups = models.ManyToManyField(
@@ -133,7 +132,6 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
-    # Методы из accounts/models.py
     @property
     def full_name(self):
         """Полное имя пользователя"""
@@ -195,7 +193,6 @@ class User(AbstractUser):
         self.save(update_fields=['last_activity'])
 
 
-# Модель Dealer остается в users/models.py
 def dealer_logo_path(instance, filename):
     """Путь для сохранения логотипов дилеров"""
     ext = filename.split('.')[-1]
@@ -298,22 +295,6 @@ class DealerReview(models.Model):
             self.dealer.rating = 0.0
             self.dealer.reviews_count = 0
         self.dealer.save(update_fields=['rating', 'reviews_count'])
-
-class Meta:
-    db_table = 'users'
-    verbose_name = _('Пользователь')
-    verbose_name_plural = _('Пользователи')
-    ordering = ['-date_joined']  # Добавляем сортировку
-
-# Добавьте сигнал для создания UserSettings при создании пользователя
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=User)
-def create_user_settings(sender, instance, created, **kwargs):
-    if created:
-        from .models_profile import UserSettings
-        UserSettings.objects.create(user=instance)
 
 
 class TimeStampedModel(models.Model):

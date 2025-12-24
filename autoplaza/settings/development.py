@@ -75,3 +75,25 @@ TEMPLATES = [
         },
     },
 ]
+INSTALLED_APPS = [
+    # Django apps
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+
+    # Third party apps
+    'debug_toolbar',
+
+    # Local apps
+    'apps.core',
+    'apps.users',
+    'apps.catalog',
+    'apps.advertisements',
+    'apps.reviews',
+    'apps.analytics',
+    'apps.chat',
+    'apps.payments',
+]

@@ -1,4 +1,7 @@
 ﻿# apps/advertisements/views.py
+import csv
+import datetime
+
 from apps.catalog.models import CarBrand, CarModel
 from apps.advertisements.models import CarAd, CarPhoto, CarAdFeature, FavoriteAd, SearchHistory, CarView
 from django.contrib import messages
@@ -13,6 +16,9 @@ from django.http import JsonResponse, Http404, HttpResponse
 from django.views.decorators.http import require_GET, require_POST
 from django.core.cache import cache
 from django.views import View
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
 
 class CarBrandListView(ListView):
     """Список всех марок автомобилей"""
@@ -1093,3 +1099,190 @@ class SimilarAdsAPIView(View):
             return JsonResponse({'results': data})
         except CarAd.DoesNotExist:
             return JsonResponse({'error': 'Объявление не найдено'}, status=404)
+
+
+@login_required
+def send_ad_message(request, ad_id):
+    """Отправить сообщение продавцу"""
+    ad = get_object_or_404(CarAd, id=ad_id, is_active=True)
+
+    if request.method == 'POST':
+        message_text = request.POST.get('message', '').strip()
+
+        if not message_text:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Сообщение не может быть пустым'
+            })
+
+        try:
+            # Сохраняем сообщение (предполагаем, что есть модель Message)
+            from apps.chat.models import Message
+
+            message = Message.objects.create(
+                sender=request.user,
+                recipient=ad.owner,
+                ad=ad,
+                content=message_text
+            )
+
+            # Отправляем email уведомление
+            if ad.owner.email:
+                subject = f'Новое сообщение по вашему объявлению "{ad.title}"'
+                context = {
+                    'ad': ad,
+                    'sender': request.user,
+                    'message': message_text,
+                    'site_url': settings.SITE_URL
+                }
+
+                html_message = render_to_string('emails/ad_message.html', context)
+                text_message = render_to_string('emails/ad_message.txt', context)
+
+                send_mail(
+                    subject=subject,
+                    message=text_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[ad.owner.email],
+                    html_message=html_message,
+                    fail_silently=True
+                )
+
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Сообщение успешно отправлено'
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Ошибка отправки: {str(e)}'
+            })
+
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Неверный метод запроса'
+    })
+
+
+def export_ads_csv(request):
+    """Экспорт объявлений в CSV"""
+    if not request.user.is_authenticated:
+        return HttpResponse('Требуется авторизация', status=401)
+
+    # Создаем HTTP-ответ с CSV
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    response[
+        'Content-Disposition'] = f'attachment; filename="autopaza_ads_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+
+    # Создаем CSV writer
+    writer = csv.writer(response, delimiter=';')
+
+    # Заголовки
+    headers = [
+        'ID',
+        'Заголовок',
+        'Марка',
+        'Модель',
+        'Год',
+        'Цена (₽)',
+        'Пробег',
+        'Город',
+        'Тип топлива',
+        'Коробка передач',
+        'Привод',
+        'Состояние',
+        'Дата создания',
+        'Статус',
+        'Просмотры',
+        'Контакты',
+        'VIN'
+    ]
+    writer.writerow(headers)
+
+    # Получаем объявления
+    ads = CarAd.objects.filter(owner=request.user).select_related('model__brand')
+
+    for ad in ads:
+        row = [
+            ad.id,
+            ad.title,
+            ad.model.brand.name if ad.model and ad.model.brand else '',
+            ad.model.name if ad.model else '',
+            ad.year,
+            ad.price,
+            f"{ad.mileage} {ad.get_mileage_unit_display()}" if ad.mileage else '',
+            ad.city,
+            ad.get_fuel_type_display(),
+            ad.get_transmission_type_display(),
+            ad.get_drive_type_display(),
+            ad.get_condition_display(),
+            ad.created_at.strftime('%d.%m.%Y %H:%M'),
+            ad.get_status_display(),
+            ad.views_count,
+            ad.contact_phone if hasattr(ad, 'contact_phone') else '',
+            ad.vin or ''
+        ]
+        writer.writerow(row)
+
+    return response
+
+class FilteredAdListView(ListView):
+    """Список объявлений для фильтрации по slug (для filter_patterns)"""
+    model = CarAd
+    template_name = 'advertisements/ad_list.html'
+    context_object_name = 'advertisements'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = CarAd.objects.filter(
+            status='active',
+            is_active=True
+        ).select_related('model__brand', 'owner')
+
+        # Обработка slug из URL
+        if 'brand_slug' in self.kwargs:
+            brand_slug = self.kwargs['brand_slug']
+            queryset = queryset.filter(model__brand__slug=brand_slug)
+
+        elif 'model_slug' in self.kwargs:
+            model_slug = self.kwargs['model_slug']
+            queryset = queryset.filter(model__slug=model_slug)
+
+        elif 'city_slug' in self.kwargs:
+            city_slug = self.kwargs['city_slug']
+            queryset = queryset.filter(city__slug=city_slug)
+
+        elif 'min_price' in self.kwargs and 'max_price' in self.kwargs:
+            queryset = queryset.filter(
+                price__gte=self.kwargs['min_price'],
+                price__lte=self.kwargs['max_price']
+            )
+
+        elif 'min_year' in self.kwargs and 'max_year' in self.kwargs:
+            queryset = queryset.filter(
+                year__gte=self.kwargs['min_year'],
+                year__lte=self.kwargs['max_year']
+            )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Добавляем информацию о фильтре в контекст
+        if 'brand_slug' in self.kwargs:
+            try:
+                brand = CarBrand.objects.get(slug=self.kwargs['brand_slug'])
+                context['filter_title'] = f"Марка: {brand.name}"
+            except CarBrand.DoesNotExist:
+                context['filter_title'] = "Марка не найдена"
+
+        elif 'model_slug' in self.kwargs:
+            try:
+                model = CarModel.objects.get(slug=self.kwargs['model_slug'])
+                context['filter_title'] = f"Модель: {model.brand.name} {model.name}"
+            except CarModel.DoesNotExist:
+                context['filter_title'] = "Модель не найдена"
+
+        return context

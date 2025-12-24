@@ -20,8 +20,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.postgres',
     'django.contrib.humanize',
+    'django.contrib.postgres',
 
     # Сторонние пакеты
     'rest_framework',
@@ -59,7 +59,9 @@ ROOT_URLCONF = 'autoplaza.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [
+            BASE_DIR / 'templates',  # Убедитесь, что этот путь правильный
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -253,3 +255,6 @@ MESSAGE_TAGS = {
 ADMIN_SITE_HEADER = 'Autoplaza - Панель администратора'
 ADMIN_SITE_TITLE = 'Autoplaza Admin'
 ADMIN_INDEX_TITLE = 'Управление сайтом'
+
+print(f"BASE_DIR: {BASE_DIR}")
+print(f"TEMPLATES DIRS: {TEMPLATES[0]['DIRS']}")

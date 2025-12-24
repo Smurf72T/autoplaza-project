@@ -5,14 +5,14 @@ from . import views
 app_name = 'advertisements'
 
 urlpatterns = [
-    # Список объявлений - используем правильное имя класса
+    # Список объявлений
     path('', views.AdvertisementsListView.as_view(), name='ad_list'),
 
-    # Детали объявления - используем правильное имя класса
+    # Детали объявления
     path('<slug:slug>/', views.AdvertisementsDetailView.as_view(), name='ad_detail'),
 
-    # Создание/редактирование объявления - используем AdCreateView из нижней части
-    path('create/', views.AdCreateView.as_view(), name='ad_create'),
+    # Создание/редактирование объявления
+    path('create/', views.CarAdCreateView.as_view(), name='ad_create'),  # Используем CarAdCreateView
     path('<slug:slug>/edit/', views.AdUpdateView.as_view(), name='ad_edit'),
     path('<slug:slug>/delete/', views.AdDeleteView.as_view(), name='ad_delete'),
 
@@ -39,13 +39,13 @@ urlpatterns = [
     path('api/<int:ad_id>/similar/', views.SimilarAdsAPIView.as_view(), name='api_similar'),
 ]
 
-# URL для фильтрации - ОБНОВЛЯЕМ ИМЯ КЛАССА
+# URL для фильтрации - ИСПРАВЛЕНО: используем FilteredAdListView
 filter_patterns = [
-    path('brand/<slug:brand_slug>/', views.AdvertisementsListView.as_view(), name='filter_by_brand'),
-    path('model/<slug:model_slug>/', views.AdvertisementsListView.as_view(), name='filter_by_model'),
-    path('city/<slug:city_slug>/', views.AdvertisementsListView.as_view(), name='filter_by_city'),
-    path('price/<int:min_price>/<int:max_price>/', views.AdvertisementsListView.as_view(), name='filter_by_price'),
-    path('year/<int:min_year>/<int:max_year>/', views.AdvertisementsListView.as_view(), name='filter_by_year'),
+    path('brand/<slug:brand_slug>/', views.FilteredAdListView.as_view(), name='filter_by_brand'),
+    path('model/<slug:model_slug>/', views.FilteredAdListView.as_view(), name='filter_by_model'),
+    path('city/<slug:city_slug>/', views.FilteredAdListView.as_view(), name='filter_by_city'),
+    path('price/<int:min_price>/<int:max_price>/', views.FilteredAdListView.as_view(), name='filter_by_price'),
+    path('year/<int:min_year>/<int:max_year>/', views.FilteredAdListView.as_view(), name='filter_by_year'),
 ]
 
 urlpatterns += filter_patterns

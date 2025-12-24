@@ -3,12 +3,12 @@ import os
 import datetime
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.urls import reverse  # ИСПРАВЛЕНО: правильный импорт
+from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
-from apps.users.models import TimeStampedModel, User
-from apps.catalog.models import CarBrand, CarModel, CarFeature
+# Импортируем только TimeStampedModel, не User
+from apps.users.models import TimeStampedModel
 
 
 # Вспомогательные функции
@@ -22,6 +22,7 @@ def car_photo_path(instance, filename):
 def current_year_plus_one():
     """Текущий год + 1 для валидатора"""
     return datetime.datetime.now().year + 1
+
 
 class City(TimeStampedModel):
     """Города для объявлений"""
@@ -115,10 +116,11 @@ class City(TimeStampedModel):
             ads_count__gt=0
         ).order_by('-ads_count')[:limit]
 
+
 class CarAd(TimeStampedModel):
     """Объявления о продаже автомобилей - ОБЪЕДИНЕННАЯ МОДЕЛЬ"""
 
-    # Константы выбора (из обоих моделей)
+    # Константы выбора (из обеих моделей)
     class ConditionType(models.TextChoices):
         NEW = 'new', _('Новый')
         USED = 'used', _('С пробегом')
@@ -135,7 +137,6 @@ class CarAd(TimeStampedModel):
         SOLD = 'sold', _('Продано')
         EXPIRED = 'expired', _('Истекло')
         BANNED = 'banned', _('Заблокировано')
-        # Из старой модели:
         PUBLISHED = 'published', _('Опубликовано')
         PENDING = 'pending', _('На модерации')
 
@@ -192,16 +193,17 @@ class CarAd(TimeStampedModel):
     )
     is_negotiable = models.BooleanField(_('Торг'), default=False)
 
-    # === Связь с автомобилем (из обеих моделей) ===
+    # === Связь с автомобилем ===
+    # Используем строковые ссылки чтобы избежать циклических импортов
     model = models.ForeignKey(
-        CarModel,
+        'catalog.CarModel',
         on_delete=models.CASCADE,
         related_name='advertisements',
         verbose_name=_('Модель')
     )
-    # Дополнительная связь с маркой для удобства (из старой модели)
+    # Дополнительная связь с маркой для удобства
     brand = models.ForeignKey(
-        CarBrand,
+        'catalog.CarBrand',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -295,24 +297,24 @@ class CarAd(TimeStampedModel):
         choices=OwnerType.choices,
         default=OwnerType.PRIVATE
     )
+    # Используем строковую ссылку на User
     owner = models.ForeignKey(
-        User,
+        'users.User',
         on_delete=models.SET_NULL,
         null=True,
         related_name='advertisements',
         verbose_name=_('Владелец')
     )
 
-    # === Локация (из обеих моделей) ===
+    # === Локация ===
     city = models.ForeignKey(
-        'City',  # В КАВЫЧКАХ!
+        'City',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='advertisements',
         verbose_name=_('Город')
     )
-
     region = models.CharField(_('Регион'), max_length=100)
 
     # === Статус и статистика (объединяем) ===
@@ -322,15 +324,16 @@ class CarAd(TimeStampedModel):
         choices=StatusType.choices,
         default=StatusType.DRAFT
     )
-    views = models.IntegerField(_('Просмотры'), default=0)  # Из старой
-    views_count = models.IntegerField(_('Просмотры (count)'), default=0)  # Из новой
+    views = models.IntegerField(_('Просмотры'), default=0)
+    views_count = models.IntegerField(_('Просмотры (count)'), default=0)
     is_active = models.BooleanField(_('Активно'), default=True)
-    is_new = models.BooleanField(_('Новое'), default=True)  # Из старой модели
+    is_new = models.BooleanField(_('Новое'), default=True)
 
     # === Системные поля (из новой модели) ===
     moderated_at = models.DateTimeField(_('Время модерации'), null=True, blank=True)
+    # Используем строковую ссылку
     moderator = models.ForeignKey(
-        User,
+        'users.User',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -360,9 +363,9 @@ class CarAd(TimeStampedModel):
     has_tuning = models.BooleanField(_('Есть тюнинг'), default=False)
     service_history = models.BooleanField(_('Есть сервисная история'), default=False)
 
-    # Поля из старой модели для совместимости:
+    # Используем строковую ссылку
     features = models.ManyToManyField(
-        CarFeature,
+        'catalog.CarFeature',
         through='CarAdFeature',
         related_name='advertisements',
         verbose_name=_('Характеристики'),
@@ -373,7 +376,7 @@ class CarAd(TimeStampedModel):
         return f'{self.title} - {self.price:,} {self.price_currency}'
 
     def save(self, *args, **kwargs):
-        # Автоматическое заполнение slug (объединяем логику)
+        # Автоматическое заполнение slug
         if not self.slug:
             base_slug = slugify(f"{self.model.brand.name} {self.model.name} {self.year}")
             self.slug = base_slug
@@ -416,7 +419,7 @@ class CarAd(TimeStampedModel):
         return reverse('advertisements:ad_detail', kwargs={'slug': self.slug})
 
     def get_main_photo(self):
-        """Получить главную фотографию (из старой модели)"""
+        """Получить главную фотографию"""
         try:
             return self.photos.filter(is_main=True).first()
         except AttributeError:
@@ -424,7 +427,7 @@ class CarAd(TimeStampedModel):
 
     @property
     def age(self):
-        """Возраст автомобиля в годах (из новой модели)"""
+        """Возраст автомобиля в годах"""
         from datetime import date
         if self.year:
             return date.today().year - self.year
@@ -432,16 +435,16 @@ class CarAd(TimeStampedModel):
 
     @property
     def is_available(self):
-        """Доступно ли объявление (из новой модели)"""
+        """Доступно ли объявление"""
         return self.status == 'active' and self.is_active
 
     @property
     def is_published(self):
-        """Опубликовано ли объявление (из старой модели)"""
+        """Опубликовано ли объявление"""
         return self.status in ['active', 'published']
 
     def increment_views(self):
-        """Увеличить счетчик просмотров (объединяем)"""
+        """Увеличить счетчик просмотров"""
         self.views += 1
         self.views_count += 1
         self.save(update_fields=['views', 'views_count'])
@@ -459,8 +462,18 @@ class CarAd(TimeStampedModel):
         self.status = 'draft'
         self.save(update_fields=['status'])
 
+    @property
+    def status_color(self):
+        status_colors = {
+            'draft': 'secondary',
+            'active': 'success',
+            'moderation': 'warning',
+            'rejected': 'danger',
+            'archived': 'info',
+            'sold': 'dark'
+        }
+        return status_colors.get(self.status, 'secondary')
 
-# === МОДЕЛИ-КОМПАНЬОНЫ (оставляем без изменений, они уже хорошие) ===
 
 class CarPhoto(TimeStampedModel):
     """Фотографии автомобилей в объявлениях"""
@@ -531,7 +544,7 @@ class CarAdFeature(TimeStampedModel):
         verbose_name=_('Объявление')
     )
     feature = models.ForeignKey(
-        CarFeature,
+        'catalog.CarFeature',
         on_delete=models.CASCADE,
         verbose_name=_('Характеристика')
     )
@@ -550,17 +563,18 @@ class FavoriteAd(TimeStampedModel):
         verbose_name_plural = _('Избранные')
         unique_together = ['user', 'car_ad']
 
+    # Используем строковую ссылку
     user = models.ForeignKey(
         'users.User',
         on_delete=models.CASCADE,
-        related_name='favorite_ads_list',  # ИЗМЕНИТЕ related_name
+        related_name='favorite_ads_list',
         verbose_name=_('Пользователь')
     )
 
     car_ad = models.ForeignKey(
         CarAd,
         on_delete=models.CASCADE,
-        related_name='favorites_rel',  # Изменяем related_name чтобы избежать конфликта
+        related_name='favorites_rel',
         verbose_name=_('Объявление')
     )
 
@@ -577,8 +591,9 @@ class SearchHistory(TimeStampedModel):
         verbose_name_plural = _('История поиска')
         ordering = ['-created_at']
 
+    # Используем строковую ссылку
     user = models.ForeignKey(
-        User,
+        'users.User',
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -606,8 +621,9 @@ class CarView(TimeStampedModel):
         verbose_name_plural = _('Просмотры')
         ordering = ['-viewed_at']
 
+    # Используем строковую ссылку
     user = models.ForeignKey(
-        User,
+        'users.User',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

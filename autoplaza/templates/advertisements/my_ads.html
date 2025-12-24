@@ -1,0 +1,150 @@
+<!-- templates/advertisements/my_ads.html -->
+{% extends "base.html" %}
+
+{% block title %}Мои объявления - Autopaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-car me-2"></i> Мои объявления</h1>
+        <a href="{% url 'advertisements:ad_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Добавить объявление
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if advertisements %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Объявление</th>
+                        <th>Цена</th>
+                        <th>Статус</th>
+                        <th>Просмотры</th>
+                        <th>Дата</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ad in advertisements %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if ad.get_main_photo %}
+                                <img src="{{ ad.get_main_photo.image.url }}"
+                                     alt="{{ ad.title }}"
+                                     class="rounded me-3"
+                                     style="width: 80px; height: 60px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center me-3"
+                                     style="width: 80px; height: 60px;">
+                                    <i class="fas fa-car text-secondary"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <a href="{% url 'advertisements:ad_detail' ad.slug %}"
+                                       class="fw-bold text-decoration-none text-dark">
+                                        {{ ad.title }}
+                                    </a>
+                                    <div class="text-muted small">
+                                        {{ ad.model.brand.name }} {{ ad.model.name }} • {{ ad.year }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="align-middle">
+                            <span class="fw-bold">{{ ad.price|floatformat:0 }} ₽</span>
+                            {% if ad.is_negotiable %}
+                            <span class="badge bg-info ms-1">Торг</span>
+                            {% endif %}
+                        </td>
+                        <td class="align-middle">
+                            <span class="badge bg-{{ ad.status_color }}">
+                                {{ ad.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="align-middle">
+                            <i class="fas fa-eye text-muted me-1"></i> {{ ad.views_count }}
+                        </td>
+                        <td class="align-middle">
+                            <small class="text-muted">
+                                {{ ad.created_at|date:"d.m.Y" }}
+                            </small>
+                        </td>
+                        <td class="align-middle">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'advertisements:ad_detail' ad.slug %}"
+                                   class="btn btn-outline-primary"
+                                   title="Просмотр">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'advertisements:ad_edit' ad.slug %}"
+                                   class="btn btn-outline-secondary"
+                                   title="Редактировать">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'advertisements:ad_delete' ad.slug %}"
+                                   class="btn btn-outline-danger"
+                                   title="Удалить">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+
+                            {% if ad.status == 'draft' %}
+                            <form method="post"
+                                  action="{% url 'advertisements:publish_ad' ad.slug %}"
+                                  class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="btn btn-sm btn-success mt-1"
+                                        title="Опубликовать">
+                                    <i class="fas fa-eye me-1"></i> Опубликовать
+                                </button>
+                            </form>
+                            {% elif ad.status == 'active' %}
+                            <form method="post"
+                                  action="{% url 'advertisements:unpublish_ad' ad.slug %}"
+                                  class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="btn btn-sm btn-warning mt-1"
+                                        title="Снять с публикации">
+                                    <i class="fas fa-eye-slash me-1"></i> Снять
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-car fa-3x text-muted mb-3"></i>
+            <h3>У вас пока нет объявлений</h3>
+            <p class="text-muted">Создайте первое объявление, чтобы начать продавать автомобиль</p>
+            <a href="{% url 'advertisements:ad_create' %}" class="btn btn-primary btn-lg mt-3">
+                <i class="fas fa-plus me-2"></i> Создать объявление
+            </a>
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'advertisements:export_csv' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-download me-1"></i> Экспорт в CSV
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+<!-- templates/users/messages.html -->
+{% extends "base.html" %}
+
+{% block title %}Мои сообщения - Autopaza{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-3">
+            {% include "users/partials/sidebar.html" %}
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-envelope me-2"></i> Мои сообщения</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        <div class="list-group">
+                            {% for message in messages %}
+                                <a href="{% url 'users:messages_dialog' message.other_user.id %}"
+                                   class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ message.other_user.get_full_name|default:message.other_user.username }}</h6>
+                                        <small>{{ message.last_message.created_at|timesince }} назад</small>
+                                    </div>
+                                    <p class="mb-1 text-truncate">{{ message.last_message.content }}</p>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-envelope-open fa-3x text-muted mb-3"></i>
+                            <h5>Сообщений пока нет</h5>
+                            <p class="text-muted">Когда кто-то напишет вам, сообщения появятся здесь</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
