@@ -1,0 +1,28 @@
+<!-- templates/users/partials/sidebar.html -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Меню пользователя</h5>
+        <div class="list-group list-group-flush">
+            <a href="{% url 'users:profile' %}"
+               class="list-group-item list-group-item-action">
+                Мой профиль
+            </a>
+            <a href="{% url 'users:profile_edit' %}"
+               class="list-group-item list-group-item-action">
+                Редактировать профиль
+            </a>
+            <a href="{% url 'advertisements:my_ads' %}"
+               class="list-group-item list-group-item-action">
+                Мои объявления
+            </a>
+            <a href="{% url 'advertisements:favorites' %}"
+               class="list-group-item list-group-item-action">
+                Избранное
+            </a>
+            <a href="{% url 'users:messages' %}"
+               class="list-group-item list-group-item-action">
+                Сообщения
+            </a>
+        </div>
+    </div>
+</div>

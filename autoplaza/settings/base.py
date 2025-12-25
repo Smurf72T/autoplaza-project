@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'django.contrib.humanize.middleware.HumanizeMiddleware',
 ]
 
 # URL и шаблоны
@@ -255,6 +256,10 @@ MESSAGE_TAGS = {
 ADMIN_SITE_HEADER = 'Autoplaza - Панель администратора'
 ADMIN_SITE_TITLE = 'Autoplaza Admin'
 ADMIN_INDEX_TITLE = 'Управление сайтом'
+
+MIGRATION_MODULES = {
+    'core': None,
+}
 
 print(f"BASE_DIR: {BASE_DIR}")
 print(f"TEMPLATES DIRS: {TEMPLATES[0]['DIRS']}")

@@ -1286,3 +1286,10 @@ class FilteredAdListView(ListView):
                 context['filter_title'] = "Модель не найдена"
 
         return context
+
+
+class FavoriteAdsView(LoginRequiredMixin, ListView):
+    template_name = 'advertisements/favorites.html'
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, {'ads': [], 'message': 'У вас пока нет избранных объявлений'})
