@@ -60,11 +60,9 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / 'templates',  # Добавляем корневую папку templates
-            # BASE_DIR / 'apps' / 'catalog' / 'templates',  # Можно закомментировать, если не используется
-            # BASE_DIR / 'apps' / 'users' / 'templates',    # Можно закомментировать, если не используется
+            BASE_DIR / 'templates',  # Убедитесь, что этот путь правильный
         ],
-        'APP_DIRS': True,  # Оставляем True, чтобы Django искал шаблоны в apps/*/templates/
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -75,6 +73,7 @@ TEMPLATES = [
         },
     },
 ]
+
 INSTALLED_APPS = [
     # Django apps
     'django.contrib.admin',

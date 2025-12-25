@@ -836,26 +836,26 @@ class CarAdCreateView(LoginRequiredMixin, CreateView):
         return reverse_lazy('advertisements:ad_detail', kwargs={'slug': self.object.slug})
 
 
-class AdCreateView(LoginRequiredMixin, CreateView):
-    """Создание объявления для advertisements namespace"""
-    model = CarAd
-    template_name = 'advertisements/ad_form.html'
-    fields = ['title', 'description', 'price', 'model', 'year', 'city']
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
-        return context
-
-    def form_valid(self, form):
-        form.instance.owner = self.request.user
-        form.instance.owner_type = 'private' if not hasattr(self.request.user, 'dealer') else 'dealer'
-        form.instance.status = 'draft'
-        messages.success(self.request, 'Объявление создано и сохранено как черновик')
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse_lazy('advertisements:my_ads')
+# class AdCreateView(LoginRequiredMixin, CreateView):
+#     """Создание объявления для advertisements namespace"""
+#     model = CarAd
+#     template_name = 'advertisements/ad_form.html'
+#     fields = ['title', 'description', 'price', 'model', 'year', 'city']
+#
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context['brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
+#         return context
+#
+#     def form_valid(self, form):
+#         form.instance.owner = self.request.user
+#         form.instance.owner_type = 'private' if not hasattr(self.request.user, 'dealer') else 'dealer'
+#         form.instance.status = 'draft'
+#         messages.success(self.request, 'Объявление создано и сохранено как черновик')
+#         return super().form_valid(form)
+#
+#     def get_success_url(self):
+#         return reverse_lazy('advertisements:my_ads')
 
 
 class AdUpdateView(LoginRequiredMixin, UpdateView):
@@ -916,17 +916,27 @@ class FavoriteAdListView(LoginRequiredMixin, ListView):
             'car_ad__photos'
         ).order_by('-created_at')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Добавьте total_price в контекст
+        total_price = sum(
+            favorite.car_ad.price for favorite in context['favorites']
+            if favorite.car_ad.price
+        )
+        context['total_price'] = total_price
+        return context
 
-class FavoritesView(LoginRequiredMixin, ListView):
-    """Избранные объявления для advertisements namespace"""
-    model = FavoriteAd
-    template_name = 'advertisements/favorites.html'
-    context_object_name = 'favorites'
 
-    def get_queryset(self):
-        return FavoriteAd.objects.filter(
-            user=self.request.user
-        ).select_related('car_ad').order_by('-created_at')
+# class FavoritesView(LoginRequiredMixin, ListView):
+#     """Избранные объявления для advertisements namespace"""
+#     model = FavoriteAd
+#     template_name = 'advertisements/favorites.html'
+#     context_object_name = 'favorites'
+#
+#     def get_queryset(self):
+#         return FavoriteAd.objects.filter(
+#             user=self.request.user
+#         ).select_related('car_ad').order_by('-created_at')
 
 
 @require_POST

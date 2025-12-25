@@ -1,0 +1,16 @@
+<!-- templates/advertisements/ad_create.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-plus-circle fa-4x text-muted mb-4"></i>
+            <h2>Добавить объявление</h2>
+            <p class="text-muted">{{ message|default:"Функция временно недоступна" }}</p>
+            <a href="{% url 'advertisements:ad_list' %}" class="btn btn-primary">
+                Вернуться к списку объявлений
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

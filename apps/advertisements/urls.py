@@ -1,4 +1,4 @@
-# apps/advertisements/urls.py
+﻿# apps/advertisements/urls.py
 from django.urls import path
 from . import views
 
@@ -11,16 +11,16 @@ urlpatterns = [
     # Детали объявления
     path('<slug:slug>/', views.AdvertisementsDetailView.as_view(), name='ad_detail'),
 
-    # Создание/редактирование объявления
-    path('create/', views.CarAdCreateView.as_view(), name='ad_create'),  # Используем CarAdCreateView
+    # Создание/редактирование объявления - используем CarAdCreateView
+    path('create/', views.CarAdCreateView.as_view(), name='ad_create'),
     path('<slug:slug>/edit/', views.AdUpdateView.as_view(), name='ad_edit'),
     path('<slug:slug>/delete/', views.AdDeleteView.as_view(), name='ad_delete'),
 
     # Мои объявления
-    path('my/', views.MyAdsView.as_view(), name='my_ads'),
+    path('my/ads/', views.MyAdsView.as_view(), name='my_ads'),
 
-    # Избранное
-    path('favorites/', views.FavoritesView.as_view(), name='favorites'),
+    # Избранное - используем FavoriteAdListView
+    path('favorites/', views.FavoriteAdListView.as_view(), name='favorites'),
 
     # Действия с объявлениями
     path('<int:ad_id>/favorite/toggle/', views.toggle_favorite, name='toggle_favorite'),
@@ -39,7 +39,7 @@ urlpatterns = [
     path('api/<int:ad_id>/similar/', views.SimilarAdsAPIView.as_view(), name='api_similar'),
 ]
 
-# URL для фильтрации - ИСПРАВЛЕНО: используем FilteredAdListView
+# URL для фильтрации
 filter_patterns = [
     path('brand/<slug:brand_slug>/', views.FilteredAdListView.as_view(), name='filter_by_brand'),
     path('model/<slug:model_slug>/', views.FilteredAdListView.as_view(), name='filter_by_model'),
