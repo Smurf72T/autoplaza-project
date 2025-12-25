@@ -10,7 +10,7 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'cars:car_brand_list' %}">Марки</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'cars:brand_list' %}">Марки</a></li>
                 <li class="breadcrumb-item active">{{ brand.name }}</li>
             </ol>
         </nav>
@@ -105,7 +105,7 @@
                         {% endif %}
                     </div>
                     <!-- ИСПРАВЛЕННАЯ ССЫЛКА -->
-                    <a href="{% url 'cars:car_model_detail' model.slug %}" class="btn btn-outline-primary btn-sm">
+                    <a href="{% url 'cars:model_detail' model.slug %}" class="btn btn-outline-primary btn-sm">
                         Подробнее <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -125,7 +125,7 @@
     {% with prev_brand=brand.get_previous_by_created_at %}
         {% if prev_brand %}
         <!-- ИСПРАВЛЕННАЯ ССЫЛКА -->
-        <a href="{% url 'cars:car_brand_detail' prev_brand.slug %}" class="btn btn-outline-secondary">
+        <a href="{% url 'cars:brand_detail' prev_brand.slug %}" class="btn btn-outline-secondary">
             <i class="fas fa-chevron-left"></i> {{ prev_brand.name }}
         </a>
         {% else %}
@@ -136,7 +136,7 @@
     {% with next_brand=brand.get_next_by_created_at %}
         {% if next_brand %}
         <!-- ИСПРАВЛЕННАЯ ССЫЛКА -->
-        <a href="{% url 'cars:car_brand_detail' next_brand.slug %}" class="btn btn-outline-secondary">
+        <a href="{% url 'cars:brand_detail' next_brand.slug %}" class="btn btn-outline-secondary">
             {{ next_brand.name }} <i class="fas fa-chevron-right"></i>
         </a>
         {% endif %}

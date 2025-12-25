@@ -28,7 +28,7 @@
             </li>
             {% if ad.model.brand %}
             <li class="breadcrumb-item">
-                <a href="{% url 'cars:car_brand_detail' ad.model.brand.slug %}">{{ ad.model.brand.name }}</a>
+                <a href="{% url 'cars:brand_detail' ad.model.brand.slug %}">{{ ad.model.brand.name }}</a>
             </li>
             {% endif %}
             <li class="breadcrumb-item active" aria-current="page">{{ ad.title|truncatechars:30 }}</li>
@@ -121,7 +121,7 @@
                                         <th width="40%">Марка/Модель:</th>
                                         <td>
                                             {% if ad.model.brand %}
-                                            <a href="{% url 'cars:сar_brand_detail' ad.model.brand.slug %}">
+                                            <a href="{% url 'cars:brand_detail' ad.model.brand.slug %}">
                                                 {{ ad.model.brand.name }}
                                             </a>
                                             {% endif %}
