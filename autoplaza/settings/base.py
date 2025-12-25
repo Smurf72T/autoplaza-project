@@ -28,6 +28,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'drf_yasg',
+    'crispy_forms',
+    'crispy_bootstrap5',  # если используете Bootstrap 5
 
     # Local apps
     'apps.users',
@@ -260,6 +262,10 @@ ADMIN_INDEX_TITLE = 'Управление сайтом'
 MIGRATION_MODULES = {
     'core': None,
 }
+
+# Настройки crispy forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 print(f"BASE_DIR: {BASE_DIR}")
 print(f"TEMPLATES DIRS: {TEMPLATES[0]['DIRS']}")

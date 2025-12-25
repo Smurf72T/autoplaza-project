@@ -86,6 +86,8 @@ INSTALLED_APPS = [
 
     # Third party apps
     'debug_toolbar',
+    'crispy_forms',
+    'crispy_bootstrap5',  # если используете Bootstrap 5
 
     # Local apps
     'apps.core',
@@ -97,3 +99,10 @@ INSTALLED_APPS = [
     'apps.chat',
     'apps.payments',
 ]
+
+# Настройки crispy forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+print(f"BASE_DIR: {BASE_DIR}")
+print(f"TEMPLATES DIRS: {TEMPLATES[0]['DIRS']}")
