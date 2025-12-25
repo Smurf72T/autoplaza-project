@@ -1,7 +1,9 @@
 ﻿# apps/advertisements/views.py
 import csv
 import datetime
+import logging
 
+from apps.advertisements.forms import CarAdForm
 from apps.catalog.models import CarBrand, CarModel
 from apps.advertisements.models import CarAd, CarPhoto, CarAdFeature, FavoriteAd, SearchHistory, CarView
 from django.contrib import messages
@@ -19,6 +21,8 @@ from django.views import View
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
+
+logger = logging.getLogger(__name__) # Получаем логгер для текущего модуля
 
 class CarBrandListView(ListView):
     """Список всех марок автомобилей"""
@@ -789,20 +793,16 @@ class AdvertisementsDetailView(DetailView):
 
 class CarAdCreateView(LoginRequiredMixin, CreateView):
     """Создание нового объявления"""
-    model = CarAd
+    def form_valid(self, form):
+        logger.info("Начата обработка формы создания объявления") # Это точно появится
+        logger.debug(f"Данные формы: {form.cleaned_data}") # Для детальной отладки
+
+    form_class = CarAdForm # Используем кастомную форму
     template_name = 'advertisements/ad_form.html'
-    fields = [
-        'title', 'description', 'price', 'is_negotiable',
-        'model', 'year', 'vin', 'mileage', 'mileage_unit', 'price_currency',
-        'engine_volume', 'engine_power', 'fuel_type',
-        'transmission_type', 'drive_type', 'condition',
-        'color_exterior', 'color_interior', 'city', 'region',
-        'seats', 'doors', 'steering_wheel', 'has_tuning', 'service_history'
-    ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Добавляем список брендов в контекст
+        # Добавляем список брендов в контекст для JavaScript
         context['brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
         return context
 
@@ -815,17 +815,19 @@ class CarAdCreateView(LoginRequiredMixin, CreateView):
             form.instance.status = 'draft'
             message = 'Черновик сохранен'
         else:
-            form.instance.status = 'draft'  # Или 'active' если нужна публикация сразу
+            form.instance.status = 'draft'  # Или 'pending' для модерации
             message = 'Объявление создано и отправлено на модерацию'
 
+        # Сохраняем объявление
         response = super().form_valid(form)
 
+        # Обработка фото
         photos = self.request.FILES.getlist('photos')
         for i, photo in enumerate(photos):
             CarPhoto.objects.create(
                 car_ad=self.object,
                 image=photo,
-                is_main=(i == 0),  # Первая фото - главная
+                is_main=(i == 0),
                 position=i
             )
 
@@ -980,23 +982,33 @@ def send_message(request):
 def api_models_by_brand(request):
     """API для получения моделей автомобилей по бренду"""
     brand_id = request.GET.get('brand_id')
+    brand_slug = request.GET.get('brand')
 
-    if not brand_id:
+    if not brand_id and not brand_slug:
         return JsonResponse([], safe=False)
 
     try:
-        models = CarModel.objects.filter(
-            brand_id=brand_id,
-            is_active=True
-        ).order_by('name')
+        # Поддерживаем оба варианта: по ID и по slug
+        if brand_id:
+            models = CarModel.objects.filter(
+                brand_id=brand_id,
+                is_active=True
+            ).order_by('name')
+        else:
+            models = CarModel.objects.filter(
+                brand__slug=brand_slug,
+                is_active=True
+            ).order_by('name')
 
         data = [
             {
                 'id': model.id,
-                'name': model.name,
                 'slug': model.slug,
+                'name': model.name,
                 'year_start': model.year_start,
-                'body_type': model.body_type
+                'year_end': model.year_end,
+                'body_type': model.body_type,
+                'full_name': f"{model.brand.name} {model.name}"
             }
             for model in models
         ]

@@ -25,6 +25,7 @@ urlpatterns = [
     # API endpoints
     path('api/search/', views.AdSearchAPIView.as_view(), name='api_search'),
     path('api/<int:ad_id>/similar/', views.SimilarAdsAPIView.as_view(), name='api_similar'),
+    path('api/models/', views.api_models_by_brand, name='api_models'),
     
     # Действия с объявлениями
     path('<int:ad_id>/favorite/toggle/', views.toggle_favorite, name='toggle_favorite'),

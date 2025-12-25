@@ -1,14 +1,14 @@
 ﻿<!-- templates/advertisements/ad_form.html -->
 {% extends 'base.html' %}
-{% load static %}
 {% load crispy_forms_tags %}
+{% load static %}
 
 {% block title %}
     {% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} объявления | Autoplaza
 {% endblock %}
 
 {% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css' rel='stylesheet' />
 <style>
 .select2-container--default .select2-selection--single {
     height: 38px;
@@ -21,65 +21,122 @@
 .select2-container--default .select2-selection--single .select2-selection__arrow {
     height: 36px;
 }
+
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
+<div class='container py-4'>
+    <div class='row justify-content-center'>
+        <div class='col-lg-10'>
             <!-- Хлебные крошки -->
-            <nav aria-label="breadcrumb" class="mb-4">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'advertisements:ad_list' %}">Объявления</a></li>
-                    <li class="breadcrumb-item active">
+            <nav aria-label='breadcrumb' class='mb-4'>
+                <ol class='breadcrumb'>
+                    <li class='breadcrumb-item'><a href='{% url "core:home" %}'>Главная</a></li>
+                    <li class='breadcrumb-item'><a href='{% url "advertisements:ad_list" %}'>Объявления</a></li>
+                    <li class='breadcrumb-item active'>
                         {% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} объявления
                     </li>
                 </ol>
             </nav>
 
             <!-- Заголовок -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">
+            <div class='d-flex justify-content-between align-items-center mb-4'>
+                <h1 class='h3 mb-0'>
                     {% if form.instance.pk %}
-                    <i class="fas fa-edit me-2"></i>Редактирование объявления
+                    <i class='fas fa-edit me-2'></i>Редактирование объявления
                     {% else %}
-                    <i class="fas fa-plus-circle me-2"></i>Создание объявления
+                    <i class='fas fa-plus-circle me-2'></i>Создание объявления
                     {% endif %}
                 </h1>
 
                 {% if form.instance.pk %}
-                <a href="{% url 'advertisements:ad_detail' form.instance.slug %}" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-eye me-1"></i>Просмотр
+                <a href='{% url "advertisements:ad_detail" form.instance.slug %}' class='btn btn-outline-primary btn-sm'>
+                    <i class='fas fa-eye me-1'></i>Просмотр
                 </a>
                 {% endif %}
             </div>
 
-            <!-- Простая форма с crispy -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <form method="post" enctype="multipart/form-data">
+            <!-- Форма -->
+            <div class='card border-0 shadow-sm'>
+                <div class='card-body p-4'>
+                    <form method='post' enctype='multipart/form-data' id='ad-form'>
                         {% csrf_token %}
-                        
-                        <!-- Отображаем все поля формы через crispy -->
-                        {{ form|crispy }}
-                        
+
+                        <!-- Марка и модель с динамической загрузкой -->
+                        <div class='row mb-4'>
+                            <div class='col-md-6'>
+                                <div class='form-group'>
+                                    <label for='id_brand' class='form-label'>Марка автомобиля *</label>
+                                    <select name='brand' id='id_brand' class='form-select' required>
+                                        <option value=''>Выберите марку</option>
+                                        {% for brand in brands %}
+                                        <option value='{{ brand.slug }}' {% if form.model.value and form.model.instance.brand.slug == brand.slug %}selected{% endif %}>
+                                            {{ brand.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class='col-md-6'>
+                                <div class='form-group'>
+                                    <label for='id_model' class='form-label'>Модель автомобиля *</label>
+                                    <div id='model-select-container'>
+                                        <select name='model' id='id_model' class='form-select' required disabled>
+                                            <option value=''>Сначала выберите марку</option>
+                                            {% if form.instance.model %}
+                                            <option value='{{ form.instance.model.slug }}' selected>
+                                                {{ form.instance.model.brand.name }} {{ form.instance.model.name }}
+                                            </option>
+                                            {% endif %}
+                                        </select>
+                                        <div id='model-loading' class='mt-2' style='display: none;'>
+                                            <span class='loading me-2'></span>
+                                            <small class='text-muted'>Загрузка моделей...</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Остальные поля через crispy -->
+                        <div id='other-fields'>
+                            {% for field in form %}
+                                {% if field.name != 'model' %}
+                                    {{ field|as_crispy_field }}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
                         <!-- Кнопки -->
-                        <div class="mt-4">
-                            <div class="d-flex justify-content-between">
-                                <a href="{% url 'advertisements:my_ads' %}" class="btn btn-outline-secondary">
+                        <div class='mt-4'>
+                            <div class='d-flex justify-content-between'>
+                                <a href='{% url "advertisements:my_ads" %}' class='btn btn-outline-secondary'>
                                     Отмена
                                 </a>
                                 <div>
-                                    <button type="submit" name="save_draft" class="btn btn-outline-primary me-2">
+                                    <button type='submit' name='save_draft' class='btn btn-outline-primary me-2'>
                                         Сохранить черновик
                                     </button>
-                                    <button type="submit" name="publish" class="btn btn-primary">
+                                    <button type='submit' name='publish' class='btn btn-primary'>
                                         {% if form.instance.pk %}
-                                        <i class="fas fa-save me-2"></i>Сохранить изменения
+                                        <i class='fas fa-save me-2'></i>Сохранить изменения
                                         {% else %}
-                                        <i class="fas fa-paper-plane me-2"></i>Опубликовать
+                                        <i class='fas fa-paper-plane me-2'></i>Опубликовать
                                         {% endif %}
                                     </button>
                                 </div>
@@ -91,4 +148,179 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js'></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация Select2 для красивого выбора
+    $('#id_brand, #id_model').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+
+    const brandSelect = document.getElementById('id_brand');
+    const modelSelect = document.getElementById('id_model');
+    const modelLoading = document.getElementById('model-loading');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Функция загрузки моделей
+    function loadModels(brandSlug) {
+        if (!brandSlug) {
+            modelSelect.innerHTML = '<option value="">Сначала выберите марку</option>';
+            modelSelect.disabled = true;
+            return;
+        }
+
+        // Показываем индикатор загрузки
+        modelLoading.style.display = 'block';
+        modelSelect.disabled = true;
+        modelSelect.innerHTML = '<option value="">Загрузка...</option>';
+
+        // Запрашиваем модели с API
+        fetch('/advertisements/api/models/?brand=' + encodeURIComponent(brandSlug), {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка сети');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Очищаем и заполняем select
+            modelSelect.innerHTML = '<option value="">Выберите модель</option>';
+
+            if (data.length === 0) {
+                modelSelect.innerHTML += '<option value="" disabled>Нет доступных моделей</option>';
+            } else {
+                data.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.slug;
+                    option.textContent = model.full_name || model.name;
+
+                    // Добавляем дополнительную информацию в data-атрибуты
+                    option.dataset.yearStart = model.year_start || '';
+                    option.dataset.yearEnd = model.year_end || '';
+                    option.dataset.bodyType = model.body_type || '';
+
+                    modelSelect.appendChild(option);
+                });
+            }
+
+            modelSelect.disabled = false;
+            modelLoading.style.display = 'none';
+
+            // Обновляем Select2
+            $(modelSelect).trigger('change');
+
+            // Если есть сохраненная модель, выбираем ее
+            {% if form.instance.model %}
+                const savedModelSlug = '{{ form.instance.model.slug }}';
+                if (savedModelSlug) {
+                    modelSelect.value = savedModelSlug;
+                    $(modelSelect).trigger('change');
+                }
+            {% endif %}
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки моделей:', error);
+            modelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+            modelLoading.style.display = 'none';
+        });
+    }
+
+    // Событие при изменении марки
+    brandSelect.addEventListener('change', function() {
+        loadModels(this.value);
+    });
+
+    // Событие при выборе модели (можно добавить автозаполнение года)
+    modelSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const yearStart = selectedOption.dataset.yearStart;
+        const yearEnd = selectedOption.dataset.yearEnd;
+        const bodyType = selectedOption.dataset.bodyType;
+
+        // Автозаполнение года выпуска, если поле пустое
+        const yearField = document.getElementById('id_year');
+        if (yearField && !yearField.value && yearStart) {
+            yearField.value = yearStart;
+        }
+
+        // Показываем информацию о модели (опционально)
+        if (yearStart || bodyType) {
+            showModelInfo(yearStart, yearEnd, bodyType);
+        }
+    });
+
+    // Функция показа информации о модели
+    function showModelInfo(yearStart, yearEnd, bodyType) {
+        // Удаляем старую информацию, если есть
+        const oldInfo = document.getElementById('model-info');
+        if (oldInfo) {
+            oldInfo.remove();
+        }
+
+        // Создаем блок с информацией
+        const infoDiv = document.createElement('div');
+        infoDiv.id = 'model-info';
+        infoDiv.className = 'alert alert-info mt-2';
+        infoDiv.style.display = 'none';
+
+        let infoText = 'Информация о модели: ';
+        const infoParts = [];
+
+        if (yearStart) {
+            infoParts.push('производство с ' + yearStart + ' года');
+        }
+        if (yearEnd) {
+            infoParts.push('по ' + yearEnd + ' год');
+        }
+        if (bodyType) {
+            infoParts.push('тип кузова: ' + bodyType);
+        }
+
+        if (infoParts.length > 0) {
+            infoText += infoParts.join(', ');
+            infoDiv.innerHTML = '<small><i class="fas fa-info-circle me-1"></i> ' + infoText + '</small>';
+            infoDiv.style.display = 'block';
+            
+            // Вставляем после контейнера выбора модели
+            document.getElementById('model-select-container').appendChild(infoDiv);
+        }
+    }
+    
+    // Если при загрузке страницы уже выбрана марка, загружаем модели
+    {% if form.instance.model %}
+        const initialBrandSlug = '{{ form.instance.model.brand.slug }}';
+        if (initialBrandSlug) {
+            brandSelect.value = initialBrandSlug;
+            loadModels(initialBrandSlug);
+        }
+    {% endif %}
+    
+    // Валидация формы
+    document.getElementById('ad-form').addEventListener('submit', function(event) {
+        const brandValue = brandSelect.value;
+        const modelValue = modelSelect.value;
+        
+        if (!brandValue || !modelValue) {
+            event.preventDefault();
+            alert('Пожалуйста, выберите марку и модель автомобиля');
+            
+            if (!brandValue) {
+                brandSelect.focus();
+            } else if (!modelValue) {
+                modelSelect.focus();
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
