@@ -253,6 +253,15 @@ class AdvertisementsListView(ListView):
     context_object_name = 'advertisements'
     paginate_by = 20
 
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        # Инициализируем переменные фильтров
+        self.selected_brand = None
+        self.selected_model = None
+        self.current_sort = None
+        self.current_order = None
+        self.filter_params = {}
+
     def get_queryset(self):
         queryset = CarAd.objects.filter(
             status='active',
@@ -267,30 +276,42 @@ class AdvertisementsListView(ListView):
 
         # Получаем все GET-параметры
         params = self.request.GET
+        self.filter_params = params.dict()
 
         # Сохраняем параметры для контекста
         self.selected_brand = params.get('brand')
         self.selected_model = params.get('model')
-        self.current_sort = params.get('sort', 'created_at')
+        self.current_sort = params.get('sort', '-created_at')
         self.current_order = params.get('order', 'desc')
 
         # 1. Фильтр по марке и модели
-        brand_id = params.get('brand')
-        if brand_id:
-            # Проверяем, является ли brand_id числом
-            if brand_id.isdigit():
-                # Это ID
-                queryset = queryset.filter(model__brand_id=int(brand_id))
-            else:
-                # Это slug, находим ID по slug
-                brand = CarBrand.objects.filter(slug=brand_id).first()
+        brand_slug = params.get('brand')
+        if brand_slug:
+            # Ищем бренд по slug
+            try:
+                brand = CarBrand.objects.filter(slug=brand_slug).first()
                 if brand:
                     queryset = queryset.filter(model__brand_id=brand.id)
                 else:
                     # Если бренд не найден, возвращаем пустой queryset
                     queryset = queryset.none()
+            except Exception:
+                queryset = queryset.none()
 
-        # 2. Фильтр по цене с валидацией
+        # 2. Фильтр по модели
+        model_slug = params.get('model')
+        if model_slug and brand_slug:  # Модель имеет смысл только если выбрана марка
+            try:
+                # Ищем модель по slug и марке
+                brand = CarBrand.objects.filter(slug=brand_slug).first()
+                if brand:
+                    model = CarModel.objects.filter(slug=model_slug, brand=brand).first()
+                    if model:
+                        queryset = queryset.filter(model_id=model.id)
+            except Exception:
+                pass
+
+        # 3. Фильтр по цене с валидацией
         min_price = params.get('min_price')
         max_price = params.get('max_price')
 
@@ -310,7 +331,7 @@ class AdvertisementsListView(ListView):
             except ValueError:
                 pass  # Игнорируем некорректные значения
 
-        # 3. Фильтр по году выпуска с валидацией
+        # 4. Фильтр по году выпуска с валидацией
         min_year = params.get('min_year')
         max_year = params.get('max_year')
 
@@ -330,7 +351,7 @@ class AdvertisementsListView(ListView):
             except ValueError:
                 pass
 
-        # 4. Фильтр по пробегу с валидацией
+        # 5. Фильтр по пробегу с валидацией
         min_mileage = params.get('min_mileage')
         max_mileage = params.get('max_mileage')
 
@@ -350,12 +371,12 @@ class AdvertisementsListView(ListView):
             except ValueError:
                 pass
 
-        # 5. Фильтр по типу кузова (из модели CarModel)
+        # 6. Фильтр по типу кузова (из модели CarModel)
         body_type = params.get('body_type')
         if body_type:
             queryset = queryset.filter(model__body_type=body_type)
 
-        # 6. Фильтры из модели CarAd (технические характеристики)
+        # 7. Фильтры из модели CarAd (технические характеристики)
         filter_fields = [
             'fuel_type',  # Тип топлива
             'transmission_type',  # Коробка передач
@@ -372,7 +393,7 @@ class AdvertisementsListView(ListView):
             if value and value != 'all':  # 'all' можно использовать для "Все варианты"
                 queryset = queryset.filter(**{field: value})
 
-        # 7. Фильтр по объему двигателя с валидацией
+        # 8. Фильтр по объему двигателя с валидацией
         min_engine_volume = params.get('min_engine_volume')
         max_engine_volume = params.get('max_engine_volume')
 
@@ -392,7 +413,7 @@ class AdvertisementsListView(ListView):
             except (ValueError, TypeError):
                 pass
 
-        # 8. Фильтр по мощности двигателя с валидацией
+        # 9. Фильтр по мощности двигателя с валидацией
         min_engine_power = params.get('min_engine_power')
         max_engine_power = params.get('max_engine_power')
 
@@ -412,14 +433,14 @@ class AdvertisementsListView(ListView):
             except (ValueError, TypeError):
                 pass
 
-        # 9. Фильтр по наличию сервисной истории и тюнингу
+        # 10. Фильтр по наличию сервисной истории и тюнингу
         if params.get('has_service_history') == 'true':
             queryset = queryset.filter(service_history=True)
 
         if params.get('has_tuning') == 'true':
             queryset = queryset.filter(has_tuning=True)
 
-        # 10. Поиск по тексту (заголовок, описание, марка, модель)
+        # 11. Поиск по тексту (заголовок, описание, марка, модель)
         search = params.get('search')
         if search:
             queryset = queryset.filter(
@@ -430,7 +451,7 @@ class AdvertisementsListView(ListView):
                 Q(vin__icontains=search)
             )
 
-        # 11. Фильтр по городу/региону
+        # 12. Фильтр по городу/региону
         city = params.get('city')
         if city:
             queryset = queryset.filter(city__icontains=city)
@@ -439,7 +460,7 @@ class AdvertisementsListView(ListView):
         if region:
             queryset = queryset.filter(region__icontains=region)
 
-        # 12. Фильтр по количеству дверей и мест
+        # 13. Фильтр по количеству дверей и мест
         doors = params.get('doors')
         if doors:
             try:
@@ -458,12 +479,13 @@ class AdvertisementsListView(ListView):
             except ValueError:
                 pass
 
-        # 13. Сортировка (после всех фильтров)
-        if self.current_sort in ['price', 'year', 'created_at', 'mileage', 'views_count']:
+        # 14. Сортировка (после всех фильтров)
+        sort_field = self.current_sort.replace('-', '') if self.current_sort.startswith('-') else self.current_sort
+        if sort_field in ['price', 'year', 'created_at', 'mileage', 'views_count']:
             if self.current_order == 'asc':
-                queryset = queryset.order_by(self.current_sort)
+                queryset = queryset.order_by(sort_field)
             else:
-                queryset = queryset.order_by(f'-{self.current_sort}')
+                queryset = queryset.order_by(f'-{sort_field}')
         else:
             # Сортировка по умолчанию - сначала новые
             queryset = queryset.order_by('-created_at')
@@ -479,6 +501,21 @@ class AdvertisementsListView(ListView):
         # Получаем параметры запроса
         params = self.request.GET
         brand_id = params.get('brand')
+
+        # Используем сохраненные атрибуты
+        context['selected_brand'] = self.selected_brand
+        context['selected_model'] = self.selected_model
+        context['current_sort'] = self.current_sort.replace('-',
+                                                            '') if self.current_sort and self.current_sort.startswith(
+            '-') else self.current_sort
+        context['current_order'] = self.current_order
+
+        # Если текущая сортировка начинается с "-", значит order = 'desc'
+        if self.current_sort and self.current_sort.startswith('-'):
+            context['current_order'] = 'desc'
+            context['current_sort'] = self.current_sort[1:]
+        else:
+            context['current_order'] = 'asc'
 
         # Используем кэш для часто запрашиваемых данных
         cache_key = f'filter_data_{brand_id}'
@@ -1030,23 +1067,27 @@ def send_message(request):
 
 @require_GET
 def api_models_by_brand(request):
-    """API для получения моделей автомобилей по бренду"""
-    brand_id = request.GET.get('brand_id')
+    """API для получения моделей автомобилей по бренду (ИСПРАВЛЕННЫЙ)"""
     brand_slug = request.GET.get('brand')
+    brand_id = request.GET.get('brand_id')
 
-    if not brand_id and not brand_slug:
+    if not brand_slug and not brand_id:
         return JsonResponse([], safe=False)
 
     try:
-        # Поддерживаем оба варианта: по ID и по slug
-        if brand_id:
+        if brand_slug:
+            # Ищем по slug
+            brand = CarBrand.objects.filter(slug=brand_slug).first()
+            if not brand:
+                return JsonResponse([], safe=False)
             models = CarModel.objects.filter(
-                brand_id=brand_id,
+                brand_id=brand.id,
                 is_active=True
             ).order_by('name')
         else:
+            # Ищем по id
             models = CarModel.objects.filter(
-                brand__slug=brand_slug,
+                brand_id=brand_id,
                 is_active=True
             ).order_by('name')
 
@@ -1066,6 +1107,7 @@ def api_models_by_brand(request):
         return JsonResponse(data, safe=False)
 
     except Exception as e:
+        logger.error(f"Ошибка в api_models_by_brand: {str(e)}")
         return JsonResponse(
             {'error': str(e), 'message': 'Ошибка загрузки моделей'},
             status=400
