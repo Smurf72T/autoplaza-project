@@ -324,6 +324,7 @@ class CarAd(TimeStampedModel):
         choices=StatusType.choices,
         default=StatusType.DRAFT
     )
+
     views = models.IntegerField(_('Просмотры'), default=0)
     views_count = models.IntegerField(_('Просмотры (count)'), default=0)
     is_active = models.BooleanField(_('Активно'), default=True)

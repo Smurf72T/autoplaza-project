@@ -4,8 +4,9 @@ import datetime
 import logging
 
 from apps.advertisements.forms import CarAdForm
-from apps.catalog.models import CarBrand, CarModel
+from apps.catalog.models import CarBrand, CarModel, CarFeature
 from apps.advertisements.models import CarAd, CarPhoto, CarAdFeature, FavoriteAd, SearchHistory, CarView
+from apps.users.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
