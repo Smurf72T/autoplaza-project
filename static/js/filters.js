@@ -88,61 +88,23 @@ class CarFilters {
     }
 }
 
-// Инициализация
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        new CarFilters();
-    });
-} else {
-    new CarFilters();
-}
+// ОДИН обработчик инициализации
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOMContentLoaded - initializing filters');
 
-document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация основного класса
+    const carFilters = new CarFilters();
+
+    // Дополнительная инициализация для других страниц (если нужно)
     const brandSelect = document.getElementById('brand-filter');
     const modelSelect = document.getElementById('model-filter');
 
-    if (brandSelect && modelSelect) {
-        brandSelect.addEventListener('change', function() {
-            const brandId = this.value;
-            updateModels(brandId);
-        });
+    if (brandSelect && modelSelect && !window.carFiltersInitialized) {
+        // Устанавливаем флаг, чтобы избежать двойной инициализации
+        window.carFiltersInitialized = true;
 
-        // Инициализация при загрузке
-        if (brandSelect.value) {
-            updateModels(brandSelect.value);
-        }
-    }
-
-    function updateModels(brandId) {
-        if (!brandId) {
-            modelSelect.innerHTML = '<option value="">Сначала выберите марку</option>';
-            modelSelect.disabled = true;
-            return;
-        }
-
-        // Показать индикатор загрузки
-        modelSelect.disabled = true;
-        modelSelect.innerHTML = '<option value="">Загрузка моделей...</option>';
-
-        // AJAX запрос для получения моделей
-        fetch(`/api/models/?brand_id=${brandId}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                let options = '<option value="">Все модели</option>';
-                data.forEach(model => {
-                    options += `<option value="${model.id}">${model.name}</option>`;
-                });
-
-                modelSelect.innerHTML = options;
-                modelSelect.disabled = false;
-            })
-            .catch(error => {
-                console.error('Error loading models:', error);
-                modelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
-            });
+        // Если есть дополнительные обработчики для других форм
+        // они инициализируются через основной класс
     }
 });
 

@@ -367,7 +367,7 @@ class CarAd(TimeStampedModel):
     features = models.ManyToManyField(
         'catalog.CarFeature',
         through='CarAdFeature',
-        related_name='car_ads',
+        related_name='advertisements',
         verbose_name=_('Характеристики'),
         blank=True
     )

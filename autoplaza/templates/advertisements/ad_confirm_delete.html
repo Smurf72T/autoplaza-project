@@ -1,6 +1,7 @@
-<!-- templates/advertisements/ad_delete_confirm.html -->
+<!-- templates/advertisements/ad_confirm_delete.html -->
 {% extends 'base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}Удаление объявления | Autoplaza{% endblock %}
 
@@ -40,9 +41,9 @@
                     <div class="border rounded p-3 mb-4">
                         <div class="row">
                             <div class="col-md-4 mb-3 mb-md-0">
-                                {% if ad.get_main_photo %}
-                                <img src="{{ ad.get_main_photo.thumbnail.url|default:ad.get_main_photo.image.url }}"
-                                     alt="{{ ad.title }}"
+                                {% if object.get_main_photo %}  <!-- ИЗМЕНИЛОСЬ: ad → object -->
+                                <img src="{{ object.get_main_photo.thumbnail.url|default:object.get_main_photo.image.url }}"
+                                     alt="{{ object.title }}"  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                                      class="img-fluid rounded">
                                 {% else %}
                                 <div class="bg-light rounded d-flex align-items-center justify-content-center"
@@ -52,18 +53,18 @@
                                 {% endif %}
                             </div>
                             <div class="col-md-8">
-                                <h5 class="card-title">{{ ad.title }}</h5>
+                                <h5 class="card-title">{{ object.title }}</h5>  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                                 <p class="card-text mb-2">
-                                    <strong>Цена:</strong> {{ ad.price|floatformat:0|intcomma }} ₽
+                                    <strong>Цена:</strong> {{ object.price|floatformat:0|intcomma }} ₽  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                                 </p>
                                 <p class="card-text mb-2">
-                                    <strong>Год:</strong> {{ ad.year }}
+                                    <strong>Год:</strong> {{ object.year }}  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                                 </p>
                                 <p class="card-text mb-2">
-                                    <strong>Пробег:</strong> {{ ad.mileage|floatformat:0|intcomma }} км
+                                    <strong>Пробег:</strong> {{ object.mileage|floatformat:0|intcomma }} км  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                                 </p>
                                 <p class="card-text mb-0">
-                                    <strong>Создано:</strong> {{ ad.created_at|date:"d.m.Y H:i" }}
+                                    <strong>Создано:</strong> {{ object.created_at|date:"d.m.Y H:i" }}  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                                 </p>
                             </div>
                         </div>
@@ -74,13 +75,13 @@
                         <div class="col-6">
                             <div class="border rounded p-2">
                                 <div class="text-muted small">Просмотров</div>
-                                <div class="h5 mb-0">{{ ad.views|default:0 }}</div>
+                                <div class="h5 mb-0">{{ object.views_count|default:0 }}</div>  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="border rounded p-2">
                                 <div class="text-muted small">В избранном</div>
-                                <div class="h5 mb-0">{{ ad.favorites_count|default:0 }}</div>
+                                <div class="h5 mb-0">{{ object.favorites_count|default:0 }}</div>  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                             </div>
                         </div>
                     </div>
@@ -111,7 +112,7 @@
                                     disabled>
                                 <i class="fas fa-trash-alt me-2"></i>Да, удалить объявление
                             </button>
-                            <a href="{% url 'advertisements:ad_detail' ad.slug %}"
+                            <a href="{% url 'advertisements:ad_detail' object.slug %}"  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                                class="btn btn-outline-secondary btn-lg px-4">
                                 <i class="fas fa-times me-2"></i>Отмена
                             </a>
@@ -127,7 +128,7 @@
                         </div>
                         <div class="col">
                             <small class="text-muted">
-                                Вместо удаления вы можете <a href="{% url 'advertisements:ad_edit' ad.slug %}">отредактировать</a>
+                                Вместо удаления вы можете <a href="{% url 'advertisements:ad_edit' object.slug %}">отредактировать</a>  <!-- ИЗМЕНИЛОСЬ: ad → object -->
                                 объявление или сделать его неактивным в настройках.
                             </small>
                         </div>

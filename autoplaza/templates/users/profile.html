@@ -625,7 +625,7 @@
                                 </div>
 
                                 <!-- Форма отправки -->
-                                <form method="post" action="{% url 'users:send_message' %}" class="border-top pt-3">
+                                <form method="post" action="{% url 'users:send_ad_message' ad.id %}" class="border-top pt-3">
                                     {% csrf_token %}
                                     <input type="hidden" name="recipient_id" value="{{ dialog_user.id }}">
                                     <div class="input-group">

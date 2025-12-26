@@ -21,6 +21,7 @@ from django.views import View
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
+from datetime import datetime
 
 logger = logging.getLogger(__name__) # Получаем логгер для текущего модуля
 
@@ -260,7 +261,7 @@ class AdvertisementsListView(ListView):
             'owner'
         ).prefetch_related(
             'photos',
-            Prefetch('features', queryset=CarAdFeature.objects.select_related('feature'))
+            Prefetch('ad_features__feature', queryset=CarAdFeature.objects.select_related('feature'))
         )
 
         # Получаем все GET-параметры
@@ -273,13 +274,20 @@ class AdvertisementsListView(ListView):
         self.current_order = params.get('order', 'desc')
 
         # 1. Фильтр по марке и модели
-        brand_id = self.selected_brand
+        brand_id = params.get('brand')
         if brand_id:
-            queryset = queryset.filter(model__brand_id=brand_id)
-
-        model_id = self.selected_model
-        if model_id:
-            queryset = queryset.filter(model_id=model_id)
+            # Проверяем, является ли brand_id числом
+            if brand_id.isdigit():
+                # Это ID
+                queryset = queryset.filter(model__brand_id=int(brand_id))
+            else:
+                # Это slug, находим ID по slug
+                brand = CarBrand.objects.filter(slug=brand_id).first()
+                if brand:
+                    queryset = queryset.filter(model__brand_id=brand.id)
+                else:
+                    # Если бренд не найден, возвращаем пустой queryset
+                    queryset = queryset.none()
 
         # 2. Фильтр по цене с валидацией
         min_price = params.get('min_price')
@@ -487,7 +495,17 @@ class AdvertisementsListView(ListView):
 
             # Если выбрана марка, фильтруем по ней
             if brand_id:
-                base_qs = base_qs.filter(model__brand_id=brand_id)
+                if brand_id.isdigit():
+                    # Это ID
+                    base_qs = base_qs.filter(model__brand_id=int(brand_id))
+                else:
+                    # Это slug, находим ID по slug
+                    try:
+                        brand = CarBrand.objects.filter(slug=brand_id).first()
+                        if brand:
+                            base_qs = base_qs.filter(model__brand_id=brand.id)
+                    except (ValueError, CarBrand.DoesNotExist):
+                        pass  # Игнорируем некорректные значения
 
             # Вычисляем диапазоны
             filter_data['price_range'] = base_qs.aggregate(
@@ -550,10 +568,24 @@ class AdvertisementsListView(ListView):
             models = cache.get(models_cache_key)
 
             if not models:
-                models = CarModel.objects.filter(
-                    brand_id=self.selected_brand,
-                    is_active=True
-                ).order_by('name')
+                # Проверяем, число ли это или slug
+                if self.selected_brand.isdigit():
+                    # Это ID
+                    models = CarModel.objects.filter(
+                        brand_id=int(self.selected_brand),
+                        is_active=True
+                    ).order_by('name')
+                else:
+                    # Это slug, ищем бренд
+                    brand = CarBrand.objects.filter(slug=self.selected_brand).first()
+                    if brand:
+                        models = CarModel.objects.filter(
+                            brand_id=brand.id,
+                            is_active=True
+                        ).order_by('name')
+                    else:
+                        models = CarModel.objects.none()
+
                 cache.set(models_cache_key, models, 300)  # 5 минут
 
             context['models'] = models
@@ -578,12 +610,28 @@ class AdvertisementsListView(ListView):
             active_models = cache.get(active_models_cache_key)
 
             if not active_models:
-                active_models = CarModel.objects.filter(
-                    brand_id=brand_id,
-                    advertisements__status='active',
-                    advertisements__is_active=True,
-                    is_active=True
-                ).distinct().order_by('name')
+                # Проверяем, является ли brand_id числом или slug
+                if brand_id.isdigit():
+                    # Это ID
+                    brand_filter = {'brand_id': int(brand_id)}
+                else:
+                    # Это slug, ищем бренд
+                    brand = CarBrand.objects.filter(slug=brand_id).first()
+                    if brand:
+                        brand_filter = {'brand_id': brand.id}
+                    else:
+                        brand_filter = {}  # Если бренд не найден
+
+                if brand_filter:
+                    active_models = CarModel.objects.filter(
+                        **brand_filter,
+                        advertisements__status='active',
+                        advertisements__is_active=True,
+                        is_active=True
+                    ).distinct().order_by('name')
+                else:
+                    active_models = CarModel.objects.none()
+
                 cache.set(active_models_cache_key, active_models, 300)
 
             context['active_models'] = active_models
@@ -739,7 +787,7 @@ class AdvertisementsDetailView(DetailView):
         ).select_related(
             'model__brand', 'owner', 'moderator'
         ).prefetch_related(
-            'photos', 'features__feature'
+            'photos', 'ad_features__feature'
         )
 
     def get_context_data(self, **kwargs):
@@ -793,11 +841,7 @@ class AdvertisementsDetailView(DetailView):
 
 class CarAdCreateView(LoginRequiredMixin, CreateView):
     """Создание нового объявления"""
-    def form_valid(self, form):
-        logger.info("Начата обработка формы создания объявления") # Это точно появится
-        logger.debug(f"Данные формы: {form.cleaned_data}") # Для детальной отладки
-
-    form_class = CarAdForm # Используем кастомную форму
+    form_class = CarAdForm
     template_name = 'advertisements/ad_form.html'
 
     def get_context_data(self, **kwargs):
@@ -807,6 +851,9 @@ class CarAdCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        logger.info("Начата обработка формы создания объявления")
+        logger.debug(f"Данные формы: {form.cleaned_data}")
+
         form.instance.owner = self.request.user
         form.instance.owner_type = 'private' if not hasattr(self.request.user, 'dealer') else 'dealer'
 

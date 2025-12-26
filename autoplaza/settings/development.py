@@ -103,6 +103,3 @@ INSTALLED_APPS = [
 # Настройки crispy forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
-
-print(f"BASE_DIR: {BASE_DIR}")
-print(f"TEMPLATES DIRS: {TEMPLATES[0]['DIRS']}")

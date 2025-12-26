@@ -384,15 +384,15 @@
                 <h5 class="modal-title">Написать сообщение</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{% url 'advertisements:send_message' %}">
+            <form method="post" action="{% url 'advertisements:send_ad_message' ad.id %}">
                 {% csrf_token %}
                 <input type="hidden" name="ad_id" value="{{ ad.id }}">
                 <div class="modal-body">
                     {% if not user.is_authenticated %}
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        Чтобы отправить сообщение, <a href="{% url 'accounts:login' %}">войдите</a> или
-                        <a href="{% url 'accounts:register' %}">зарегистрируйтесь</a>.
+                        Чтобы отправить сообщение, <a href="{% url 'users:login' %}">войдите</a> или
+                        <a href="{% url 'users:register' %}">зарегистрируйтесь</a>.
                     </div>
                     {% endif %}
 
@@ -476,7 +476,7 @@ function changeMainPhoto(photoUrl, element) {
 // Добавление/удаление из избранного
 function toggleFavorite(adId) {
     if (!{% if user.is_authenticated %}true{% else %}false{% endif %}) {
-        window.location.href = "{% url 'accounts:login' %}?next={{ request.path }}";
+        window.location.href = "{% url 'users:login' %}?next={{ request.path }}";
         return;
     }
 
@@ -484,7 +484,8 @@ function toggleFavorite(adId) {
     const icon = document.getElementById('favorite-icon');
     const text = document.getElementById('favorite-text');
 
-    fetch(`/api/favorites/${adId}/toggle/`, {
+    // ИСПРАВЛЕННЫЙ URL: используем advertisements namespace вместо api
+    fetch(`/advertisements/${adId}/favorite/toggle/`, {
         method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}',
@@ -546,7 +547,8 @@ function showNotification(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', function() {
     // Отмечаем объявление как просмотренное
     if ({% if user.is_authenticated %}true{% else %}false{% endif %}) {
-        fetch(`/api/ads/${ {{ ad.id }} }/view/`, {
+        // ИСПРАВЛЕННЫЙ URL: используем advertisements namespace вместо api
+        fetch(`/advertisements/${ {{ ad.id }} }/view/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}'
