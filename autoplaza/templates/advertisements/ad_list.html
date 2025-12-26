@@ -275,7 +275,8 @@ document.addEventListener('DOMContentLoaded', function() {
             modelSelect.disabled = true;
             modelSelect.innerHTML = '<option value="">Загрузка...</option>';
 
-            fetch(`/api/models/?brand=${brandSlug}`)
+            // ИСПРАВЛЕННЫЙ URL: используем правильный endpoint
+            fetch(`/advertisements/models-api/?brand=${brandSlug}`)
                 .then(response => response.json())
                 .then(data => {
                     let options = '<option value="">Все модели</option>';

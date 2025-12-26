@@ -36,6 +36,28 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Стили для множественного выбора файлов */
+#photos-clear_id {
+    display: none !important;
+}
+
+.custom-file-input {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    cursor: pointer;
+}
+
+/* Прогресс бар для загрузки фото */
+.progress {
+    height: 6px;
+    margin-top: 5px;
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+}
 </style>
 {% endblock %}
 
@@ -48,6 +70,9 @@
                 <ol class='breadcrumb'>
                     <li class='breadcrumb-item'><a href='{% url "core:home" %}'>Главная</a></li>
                     <li class='breadcrumb-item'><a href='{% url "advertisements:ad_list" %}'>Объявления</a></li>
+                    {% if form.instance.pk %}
+                    <li class='breadcrumb-item'><a href='{% url "advertisements:my_ads" %}'>Мои объявления</a></li>
+                    {% endif %}
                     <li class='breadcrumb-item active'>
                         {% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} объявления
                     </li>
@@ -85,21 +110,24 @@
                                     <select name='brand' id='id_brand' class='form-select' required>
                                         <option value=''>Выберите марку</option>
                                         {% for brand in brands %}
-                                        <option value='{{ brand.slug }}' {% if form.model.value and form.model.instance.brand.slug == brand.slug %}selected{% endif %}>
+                                        <option value='{{ brand.id }}' {% if form.brand.value and form.brand.value.id == brand.id %}selected{% elif form.instance.model and form.instance.model.brand.id == brand.id %}selected{% endif %}>
                                             {{ brand.name }}
                                         </option>
                                         {% endfor %}
                                     </select>
+                                    {% if form.brand.errors %}
+                                    <div class="text-danger small">{{ form.brand.errors }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class='col-md-6'>
                                 <div class='form-group'>
                                     <label for='id_model' class='form-label'>Модель автомобиля *</label>
                                     <div id='model-select-container'>
-                                        <select name='model' id='id_model' class='form-select' required disabled>
-                                            <option value=''>Сначала выберите марку</option>
+                                        <select name='model' id='id_model' class='form-select' required {% if not form.model.value and not form.instance.model %}disabled{% endif %}>
+                                            <option value=''>{% if form.model.value or form.instance.model %}Выберите модель{% else %}Сначала выберите марку{% endif %}</option>
                                             {% if form.instance.model %}
-                                            <option value='{{ form.instance.model.slug }}' selected>
+                                            <option value='{{ form.instance.model.id }}' selected>
                                                 {{ form.instance.model.brand.name }} {{ form.instance.model.name }}
                                             </option>
                                             {% endif %}
@@ -109,17 +137,147 @@
                                             <small class='text-muted'>Загрузка моделей...</small>
                                         </div>
                                     </div>
+                                    {% if form.model.errors %}
+                                    <div class="text-danger small">{{ form.model.errors }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Остальные поля через crispy -->
-                        <div id='other-fields'>
-                            {% for field in form %}
-                                {% if field.name != 'model' %}
-                                    {{ field|as_crispy_field }}
-                                {% endif %}
-                            {% endfor %}
+                        <!-- Основные поля -->
+                        <div class='row mb-4'>
+                            <div class='col-md-6'>
+                                {{ form.title|as_crispy_field }}
+                            </div>
+                            <div class='col-md-6'>
+                                {{ form.price|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class='row mb-4'>
+                            <div class='col-md-3'>
+                                {{ form.year|as_crispy_field }}
+                            </div>
+                            <div class='col-md-3'>
+                                {{ form.mileage|as_crispy_field }}
+                            </div>
+                            <div class='col-md-3'>
+                                {{ form.mileage_unit|as_crispy_field }}
+                            </div>
+                            <div class='col-md-3'>
+                                {{ form.is_negotiable|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Двигатель и трансмиссия -->
+                        <div class='row mb-4'>
+                            <div class='col-md-3'>
+                                {{ form.engine_volume|as_crispy_field }}
+                            </div>
+                            <div class='col-md-3'>
+                                {{ form.engine_power|as_crispy_field }}
+                            </div>
+                            <div class='col-md-3'>
+                                {{ form.fuel_type|as_crispy_field }}
+                            </div>
+                            <div class='col-md-3'>
+                                {{ form.transmission_type|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class='row mb-4'>
+                            <div class='col-md-3'>
+                                {{ form.drive_type|as_crispy_field }}
+                            </div>
+                            <div class='col-md-3'>
+                                {{ form.condition|as_crispy_field }}
+                            </div>
+                            <div class='col-md-3'>
+                                {{ form.steering_wheel|as_crispy_field }}
+                            </div>
+                            <div class='col-md-3'>
+                                {{ form.doors|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Цвет и локация -->
+                        <div class='row mb-4'>
+                            <div class='col-md-4'>
+                                {{ form.color_exterior|as_crispy_field }}
+                            </div>
+                            <div class='col-md-4'>
+                                {{ form.color_interior|as_crispy_field }}
+                            </div>
+                            <div class='col-md-4'>
+                                {{ form.seats|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class='row mb-4'>
+                            <div class='col-md-6'>
+                                {{ form.city|as_crispy_field }}
+                            </div>
+                            <div class='col-md-6'>
+                                {{ form.region|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- VIN и дополнительные опции -->
+                        <div class='row mb-4'>
+                            <div class='col-md-6'>
+                                {{ form.vin|as_crispy_field }}
+                            </div>
+                            <div class='col-md-6'>
+                                <div class='d-flex align-items-center h-100'>
+                                    <div class='form-check form-switch me-3'>
+                                        {{ form.has_tuning|as_crispy_field }}
+                                    </div>
+                                    <div class='form-check form-switch'>
+                                        {{ form.service_history|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Фотографии -->
+                        <div class='mb-4'>
+                            <h5 class='mb-3'><i class='fas fa-camera me-2'></i>Фотографии</h5>
+                            <div class='alert alert-info'>
+                                <small>
+                                    <i class='fas fa-info-circle me-1'></i>
+                                    Загрузите фотографии автомобиля. Первое фото будет главным.
+                                    Поддерживаются JPG, PNG, WEBP до 10MB.
+                                </small>
+                            </div>
+
+                            {{ form.photos|as_crispy_field }}
+
+                            <!-- Предпросмотр загруженных фото -->
+                            {% if form.instance.pk and form.instance.photos.all %}
+                            <div class='mt-3'>
+                                <h6 class='mb-2'>Загруженные фотографии:</h6>
+                                <div class='row g-2' id='uploaded-photos'>
+                                    {% for photo in form.instance.photos.all %}
+                                    <div class='col-3 col-md-2'>
+                                        <div class='position-relative'>
+                                            <img src='{{ photo.thumbnail.url|default:photo.image.url }}'
+                                                 alt='Фото {{ forloop.counter }}'
+                                                 class='img-thumbnail w-100'
+                                                 style='height: 80px; object-fit: cover;'>
+                                            {% if photo.is_main %}
+                                            <span class='badge bg-success position-absolute top-0 start-0 m-1'>Главное</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Описание -->
+                        <div class='mb-4'>
+                            {{ form.description|as_crispy_field }}
                         </div>
 
                         <!-- Кнопки -->
@@ -129,10 +287,10 @@
                                     Отмена
                                 </a>
                                 <div>
-                                    <button type='submit' name='save_draft' class='btn btn-outline-primary me-2'>
+                                    <button type='submit' name='save_draft' value='true' class='btn btn-outline-primary me-2'>
                                         Сохранить черновик
                                     </button>
-                                    <button type='submit' name='publish' class='btn btn-primary'>
+                                    <button type='submit' name='publish' value='true' class='btn btn-primary'>
                                         {% if form.instance.pk %}
                                         <i class='fas fa-save me-2'></i>Сохранить изменения
                                         {% else %}
@@ -145,6 +303,20 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Подсказки -->
+            <div class='mt-4'>
+                <div class='alert alert-light'>
+                    <h6 class='alert-heading'><i class='fas fa-lightbulb me-2'></i>Советы:</h6>
+                    <ul class='mb-0'>
+                        <li>Заполняйте все поля максимально подробно</li>
+                        <li>Добавьте качественные фотографии с разных ракурсов</li>
+                        <li>Укажите реальный пробег и состояние автомобиля</li>
+                        <li>Укажите свой контактный телефон в профиле</li>
+                        <li>Черновик можно сохранить и опубликовать позже</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -152,24 +324,26 @@
 
 {% block extra_js %}
 <script src='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ru.js'></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Инициализация Select2 для красивого выбора
-    $('#id_brand, #id_model').select2({
+    $('#id_brand, #id_model, #id_fuel_type, #id_transmission_type, #id_drive_type, #id_condition, #id_steering_wheel, #id_mileage_unit').select2({
         theme: 'bootstrap-5',
-        width: '100%'
+        width: '100%',
+        language: 'ru'
     });
 
     const brandSelect = document.getElementById('id_brand');
     const modelSelect = document.getElementById('id_model');
     const modelLoading = document.getElementById('model-loading');
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
     // Функция загрузки моделей
-    function loadModels(brandSlug) {
-        if (!brandSlug) {
+    function loadModels(brandId) {
+        if (!brandId) {
             modelSelect.innerHTML = '<option value="">Сначала выберите марку</option>';
             modelSelect.disabled = true;
+            $(modelSelect).trigger('change');
             return;
         }
 
@@ -177,9 +351,10 @@ document.addEventListener('DOMContentLoaded', function() {
         modelLoading.style.display = 'block';
         modelSelect.disabled = true;
         modelSelect.innerHTML = '<option value="">Загрузка...</option>';
+        $(modelSelect).trigger('change');
 
-        // Запрашиваем модели с API
-        fetch('/advertisements/api/models/?brand=' + encodeURIComponent(brandSlug), {
+        // ИСПРАВЛЕННЫЙ URL: Используем правильный API endpoint
+        fetch('/advertisements/models-api/?brand_id=' + encodeURIComponent(brandId), {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -188,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Ошибка сети');
+                throw new Error('Ошибка сети: ' + response.status);
             }
             return response.json();
         })
@@ -201,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 data.forEach(model => {
                     const option = document.createElement('option');
-                    option.value = model.slug;
+                    option.value = model.id; // Используем ID, а не slug
                     option.textContent = model.full_name || model.name;
 
                     // Добавляем дополнительную информацию в data-атрибуты
@@ -215,15 +390,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             modelSelect.disabled = false;
             modelLoading.style.display = 'none';
-
-            // Обновляем Select2
             $(modelSelect).trigger('change');
 
             // Если есть сохраненная модель, выбираем ее
             {% if form.instance.model %}
-                const savedModelSlug = '{{ form.instance.model.slug }}';
-                if (savedModelSlug) {
-                    modelSelect.value = savedModelSlug;
+                const savedModelId = {{ form.instance.model.id }};
+                if (savedModelId) {
+                    modelSelect.value = savedModelId;
                     $(modelSelect).trigger('change');
                 }
             {% endif %}
@@ -232,6 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Ошибка загрузки моделей:', error);
             modelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
             modelLoading.style.display = 'none';
+            $(modelSelect).trigger('change');
         });
     }
 
@@ -240,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadModels(this.value);
     });
 
-    // Событие при выборе модели (можно добавить автозаполнение года)
+    // Событие при выборе модели (автозаполнение года)
     modelSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const yearStart = selectedOption.dataset.yearStart;
@@ -253,10 +427,8 @@ document.addEventListener('DOMContentLoaded', function() {
             yearField.value = yearStart;
         }
 
-        // Показываем информацию о модели (опционально)
-        if (yearStart || bodyType) {
-            showModelInfo(yearStart, yearEnd, bodyType);
-        }
+        // Показываем информацию о модели
+        showModelInfo(yearStart, yearEnd, bodyType);
     });
 
     // Функция показа информации о модели
@@ -290,30 +462,46 @@ document.addEventListener('DOMContentLoaded', function() {
             infoText += infoParts.join(', ');
             infoDiv.innerHTML = '<small><i class="fas fa-info-circle me-1"></i> ' + infoText + '</small>';
             infoDiv.style.display = 'block';
-            
+
             // Вставляем после контейнера выбора модели
             document.getElementById('model-select-container').appendChild(infoDiv);
         }
     }
-    
+
     // Если при загрузке страницы уже выбрана марка, загружаем модели
     {% if form.instance.model %}
-        const initialBrandSlug = '{{ form.instance.model.brand.slug }}';
-        if (initialBrandSlug) {
-            brandSelect.value = initialBrandSlug;
-            loadModels(initialBrandSlug);
+        const initialBrandId = {{ form.instance.model.brand.id }};
+        if (initialBrandId) {
+            brandSelect.value = initialBrandId;
+            loadModels(initialBrandId);
         }
+    {% elif form.brand.value %}
+        // Если форма была отправлена с ошибками
+        brandSelect.value = {{ form.brand.value.id }};
+        loadModels({{ form.brand.value.id }});
     {% endif %}
-    
+
     // Валидация формы
     document.getElementById('ad-form').addEventListener('submit', function(event) {
         const brandValue = brandSelect.value;
         const modelValue = modelSelect.value;
-        
+
         if (!brandValue || !modelValue) {
             event.preventDefault();
-            alert('Пожалуйста, выберите марку и модель автомобиля');
-            
+            const errorMsg = 'Пожалуйста, выберите марку и модель автомобиля';
+
+            // Показываем ошибку
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+            errorDiv.innerHTML = `
+                <strong>Ошибка!</strong> ${errorMsg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            // Вставляем перед формой
+            this.parentNode.insertBefore(errorDiv, this);
+
+            // Фокусируемся на первом пустом поле
             if (!brandValue) {
                 brandSelect.focus();
             } else if (!modelValue) {
@@ -321,6 +509,70 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // Ограничение на количество файлов
+    const photoInput = document.getElementById('id_photos');
+    if (photoInput) {
+        photoInput.addEventListener('change', function() {
+            const maxFiles = 20;
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            const files = this.files;
+
+            if (files.length > maxFiles) {
+                alert(`Максимальное количество файлов: ${maxFiles}`);
+                this.value = '';
+                return;
+            }
+
+            // Проверка размера файлов
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].size > maxSize) {
+                    alert(`Файл "${files[i].name}" слишком большой. Максимальный размер: 10MB`);
+                    this.value = '';
+                    return;
+                }
+            }
+
+            // Показать предпросмотр
+            showImagePreview(files);
+        });
+    }
+
+    // Показать предпросмотр изображений
+    function showImagePreview(files) {
+        const previewContainer = document.getElementById('uploaded-photos') ||
+                               (function() {
+                                   const container = document.createElement('div');
+                                   container.id = 'uploaded-photos';
+                                   container.className = 'row g-2 mt-3';
+                                   photoInput.parentNode.appendChild(container);
+                                   return container;
+                               })();
+
+        // Очищаем только если это новые файлы (не при редактировании)
+        if (!{% if form.instance.pk %}true{% else %}false{% endif %}) {
+            previewContainer.innerHTML = '';
+        }
+
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const col = document.createElement('div');
+                col.className = 'col-3 col-md-2';
+                col.innerHTML = `
+                    <div class="position-relative">
+                        <img src="${e.target.result}"
+                             alt="Новое фото ${i+1}"
+                             class="img-thumbnail w-100"
+                             style="height: 80px; object-fit: cover;">
+                        <span class="badge bg-primary position-absolute top-0 start-0 m-1">Новое</span>
+                    </div>
+                `;
+                previewContainer.appendChild(col);
+            };
+            reader.readAsDataURL(files[i]);
+        }
+    }
 });
 </script>
 {% endblock %}

@@ -40,19 +40,19 @@
         <!-- Список избранного -->
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-5">
             {% for favorite in favorites %}
-            <div class="col" id="favorite-{{ favorite.ad.id }}">
+            <div class="col" id="favorite-{{ favorite.car_ad.id }}">
                 <div class="card ad-card h-100">
                     <!-- Кнопка удаления -->
                     <div class="position-absolute top-0 end-0 p-2" style="z-index: 10;">
                         <button class="btn btn-sm btn-light remove-favorite"
-                                onclick="removeFromFavorites({{ favorite.ad.id }})"
+                                onclick="removeFromFavorites({{ favorite.car_ad.id }})"
                                 title="Удалить из избранного">
                             <i class="fas fa-times text-danger"></i>
                         </button>
                     </div>
 
                     <!-- Карточка объявления -->
-                    {% include 'advertisements/partials/ad_card.html' with ad=favorite.ad %}
+                    {% include 'advertisements/partials/ad_card.html' with ad=favorite.car_ad %}
                 </div>
             </div>
             {% endfor %}
@@ -77,7 +77,7 @@
                 <a href="{% url 'advertisements:ad_list' %}" class="btn btn-primary">
                     <i class="fas fa-search me-2"></i>Найти автомобили
                 </a>
-                <a href="{% url 'cars:brand_list' %}" class="btn btn-outline-primary">
+                <a href="{% url 'catalog:brand_list' %}" class="btn btn-outline-primary">
                     <i class="fas fa-car me-2"></i>Посмотреть марки
                 </a>
             </div>
@@ -94,8 +94,9 @@ function removeFromFavorites(adId) {
         return;
     }
 
-    fetch(`/api/favorites/${adId}/remove/`, {
-        method: 'DELETE',
+    // ИСПРАВЛЕННЫЙ URL: используем правильный endpoint
+    fetch(`/advertisements/${adId}/favorite/toggle/`, {
+        method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}',
             'Content-Type': 'application/json'
@@ -103,7 +104,7 @@ function removeFromFavorites(adId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
+        if (data.status === 'removed') {
             const element = document.getElementById(`favorite-${adId}`);
             if (element) {
                 // Анимация удаления
@@ -137,7 +138,8 @@ function clearAllFavorites() {
         return;
     }
 
-    fetch('/api/favorites/clear/', {
+    // Этот endpoint нужно создать в views.py если нужен
+    fetch('/advertisements/favorites/clear/', {
         method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}',

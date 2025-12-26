@@ -13,13 +13,14 @@ urlpatterns = [
     path('api/<int:ad_id>/similar/', views.SimilarAdsAPIView.as_view(), name='api_similar'),
     path('models-api/', views.api_models_by_brand, name='api_models'),
 
-    # СПЕЦИФИЧНЫЕ ПУТИ ДОЛЖНЫ БЫТЬ ПЕРЕД ОБЩИМИ!
-
-    # Создание объявления
+    # Создание объявления - используем CarAdCreateView
     path('create/', views.CarAdCreateView.as_view(), name='ad_create'),
 
     # Избранное
     path('favorites/', views.FavoriteAdListView.as_view(), name='favorites'),
+
+    # Очистка избранного
+    path('favorites/clear/', views.clear_favorites, name='clear_favorites'),
 
     # Мои объявления
     path('my/ads/', views.MyAdsView.as_view(), name='my_ads'),
@@ -27,7 +28,7 @@ urlpatterns = [
     # Экспорт
     path('export/csv/', views.export_ads_csv, name='export_csv'),
 
-    # Действия с объявлениями (ПЕРЕНЕСЕНО ВНИЗ, чтобы не конфликтовало)
+    # Действия с объявлениями
     path('<int:ad_id>/favorite/toggle/', views.toggle_favorite, name='toggle_favorite'),
     path('<int:ad_id>/view/', views.increment_views, name='increment_views'),
     path('<slug:slug>/publish/', views.publish_ad, name='publish_ad'),
@@ -36,11 +37,11 @@ urlpatterns = [
     # Сообщения к объявлениям
     path('<int:ad_id>/send-message/', views.send_ad_message, name='send_ad_message'),
 
-    # Редактирование/удаление (тоже должны быть перед общим паттерном)
-    path('<slug:slug>/edit/', views.AdUpdateView.as_view(), name='ad_edit'),
+    # Редактирование/удаление
+    path('<slug:slug>/edit/', views.AdUpdateView.as_view(), name='ad_edit'),  # Используем исправленный AdUpdateView
     path('<slug:slug>/delete/', views.AdDeleteView.as_view(), name='ad_delete'),
 
-    # ОБЩИЙ ПАТТЕРН ДЛЯ ДЕТАЛЕЙ ОБЪЯВЛЕНИЯ - ДОЛЖЕН БЫТЬ ПОСЛЕДНИМ!
+    # Детали объявления
     path('<slug:slug>/', views.AdvertisementsDetailView.as_view(), name='ad_detail'),
 ]
 
