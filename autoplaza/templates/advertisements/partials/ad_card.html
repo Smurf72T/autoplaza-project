@@ -111,7 +111,7 @@
 <script>
 // Функция для добавления в избранное из карточки
 function toggleFavoriteCard(adId, element) {
-    fetch(`/api/favorites/${adId}/toggle/`, {
+    fetch(`/advertisements/${adId}/favorite/toggle/`, {
         method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}',

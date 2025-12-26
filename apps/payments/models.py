@@ -199,7 +199,9 @@ class AdPromotion(TimeStampedModel):
 
     car_ad = models.ForeignKey(
         'advertisements.CarAd',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='promotions',
         verbose_name=_('Объявление')
     )
