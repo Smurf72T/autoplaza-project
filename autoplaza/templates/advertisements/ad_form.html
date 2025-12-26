@@ -1,4 +1,4 @@
-﻿<!-- templates/advertisements/ad_form.html -->
+﻿﻿<!-- templates/advertisements/ad_form.html -->
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 {% load static %}
@@ -59,6 +59,12 @@
     transition: width 0.3s ease;
 }
 
+/* Стили для отображения только имени модели в выпадающем списке */
+#id_model option {
+    padding-left: 8px;
+}
+
+/* Анимации для индикатора загрузки и ошибок */
 #model-loading {
     transition: opacity 0.3s ease;
 }
@@ -76,6 +82,18 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Стиль для информации о модели */
+#model-info {
+    font-size: 0.875rem;
+}
+#model-info strong {
+    color: #0d6efd;
+}
+
+/* Стиль для новых фотографий */
+.badge.bg-primary {
+    background-color: #0d6efd !important;
+}
 </style>
 {% endblock %}
 
@@ -117,6 +135,12 @@
             <!-- Форма -->
             <div class='card border-0 shadow-sm'>
                 <div class='card-body p-4'>
+                    <!-- Скрытый элемент для передачи API URL в JavaScript -->
+                    <div id="api-urls"
+                         data-models-api-url="{% url 'advertisements:api_models_by_brand' %}"
+                         style="display: none;">
+                    </div>
+
                     <form method='post' enctype='multipart/form-data' id='ad-form'>
                         {% csrf_token %}
 
@@ -146,7 +170,7 @@
                                             <option value=''>{% if form.model.value or form.instance.model %}Выберите модель{% else %}Сначала выберите марку{% endif %}</option>
                                             {% if form.instance.model %}
                                             <option value='{{ form.instance.model.id }}' selected>
-                                                {{ form.instance.model.brand.name }} {{ form.instance.model.name }}
+                                                {{ form.instance.model.name }}
                                             </option>
                                             {% endif %}
                                         </select>
@@ -343,13 +367,42 @@
 {% block extra_js %}
 <script src='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js'></script>
 <script src='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ru.js'></script>
+<script src='{% static "js/dynamic-models.js" %}'></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Инициализация страницы создания/редактирования объявления');
+
+    // Получаем API URL из data-атрибута
+    const apiUrls = document.getElementById('api-urls');
+    const modelsApiUrl = apiUrls ? apiUrls.dataset.modelsApiUrl : '/advertisements/models-api/';
+    console.log('Models API URL:', modelsApiUrl);
+
     // Инициализация Select2 для красивого выбора
-    $('#id_brand, #id_model, #id_fuel_type, #id_transmission_type, #id_drive_type, #id_condition, #id_steering_wheel, #id_mileage_unit').select2({
+    $('#id_brand, #id_fuel_type, #id_transmission_type, #id_drive_type, #id_condition, #id_steering_wheel, #id_mileage_unit').select2({
         theme: 'bootstrap-5',
         width: '100%',
         language: 'ru'
+    });
+
+    // Инициализация Select2 для поля модели с кастомным отображением
+    $('#id_model').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        language: 'ru',
+        templateResult: function(model) {
+            if (!model.id) {
+                return model.text;
+            }
+            // Показываем только имя модели без марки
+            return model.text;
+        },
+        templateSelection: function(model) {
+            if (!model.id) {
+                return model.text;
+            }
+            // В выбранном поле тоже только имя модели
+            return model.text;
+        }
     });
 
     const brandSelect = document.getElementById('id_brand');
@@ -358,7 +411,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Функция загрузки моделей
     function loadModels(brandId) {
+        console.log('Загрузка моделей для марки ID:', brandId);
+
         if (!brandId) {
+            console.log('Марка не выбрана, очищаем поле моделей');
             modelSelect.innerHTML = '<option value="">Сначала выберите марку</option>';
             modelSelect.disabled = true;
             $(modelSelect).trigger('change');
@@ -371,8 +427,8 @@ document.addEventListener('DOMContentLoaded', function() {
         modelSelect.innerHTML = '<option value="">Загрузка...</option>';
         $(modelSelect).trigger('change');
 
-        // ИСПРАВЛЕННЫЙ URL: Используем правильный API endpoint
-        fetch(`{% url "advertisements:api_models_by_brand" %}?brand_id=${encodeURIComponent(brandId)}`, {
+        // Используем правильный URL с brand_id параметром
+        fetch(modelsApiUrl + '?brand_id=' + encodeURIComponent(brandId), {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -380,63 +436,98 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(response => {
+            console.log('Ответ от API:', response.status, response.statusText);
             if (!response.ok) {
                 throw new Error('Ошибка сети: ' + response.status);
             }
             return response.json();
         })
         .then(data => {
-        // Очищаем и заполняем select
-        modelSelect.innerHTML = '<option value="">Выберите модель</option>';
+            console.log('Получены данные моделей:', data);
 
-        if (data.length === 0) {
-            modelSelect.innerHTML += '<option value="" disabled>Нет доступных моделей</option>';
-        } else {
-            data.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model.id;
-                // ИСПРАВЛЯЕМ: используем только имя модели, без марки
-                option.textContent = model.name || model.full_name;
+            // Очищаем и заполняем select
+            modelSelect.innerHTML = '<option value="">Выберите модель</option>';
 
-                // Добавляем дополнительную информацию в data-атрибуты
-                option.dataset.yearStart = model.year_start || '';
-                option.dataset.yearEnd = model.year_end || '';
-                option.dataset.bodyType = model.body_type || '';
-                option.dataset.modelName = model.name || '';
+            if (!data || data.length === 0) {
+                console.log('Нет доступных моделей для выбранной марки');
+                modelSelect.innerHTML += '<option value="" disabled>Нет доступных моделей</option>';
+            } else {
+                console.log(`Найдено ${data.length} моделей`);
+                data.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    // Используем только имя модели без марки
+                    option.textContent = model.name || model.full_name;
 
-                modelSelect.appendChild(option);
-            });
-        }
+                    // Добавляем дополнительную информацию в data-атрибуты
+                    option.dataset.yearStart = model.year_start || '';
+                    option.dataset.yearEnd = model.year_end || '';
+                    option.dataset.bodyType = model.body_type || '';
+                    option.dataset.modelName = model.name || '';
 
-        modelSelect.disabled = false;
-        modelLoading.style.display = 'none';
-        $(modelSelect).trigger('change');
-
-        // Если есть сохраненная модель, выбираем ее
-        {% if form.instance.model %}
-            const savedModelId = {{ form.instance.model.id }};
-            if (savedModelId) {
-                modelSelect.value = savedModelId;
-                $(modelSelect).trigger('change');
+                    modelSelect.appendChild(option);
+                });
             }
-        {% endif %}
-    })
+
+            modelSelect.disabled = false;
+            modelLoading.style.display = 'none';
+            $(modelSelect).trigger('change');
+
+            // Если есть сохраненная модель, выбираем ее
+            {% if form.instance.model %}
+                const savedModelId = {{ form.instance.model.id }};
+                console.log('Сохраненная модель ID:', savedModelId);
+                if (savedModelId) {
+                    modelSelect.value = savedModelId;
+                    $(modelSelect).trigger('change');
+                }
+            {% endif %}
+        })
         .catch(error => {
             console.error('Ошибка загрузки моделей:', error);
             modelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
             modelLoading.style.display = 'none';
             $(modelSelect).trigger('change');
+
+            // Показываем сообщение об ошибке
+            showError('Не удалось загрузить модели. Пожалуйста, попробуйте снова.');
         });
+    }
+
+    // Функция показа ошибки
+    function showError(message) {
+        console.log('Показ ошибки:', message);
+
+        // Удаляем старые сообщения об ошибках
+        const oldError = document.querySelector('.model-load-error');
+        if (oldError) oldError.remove();
+
+        // Создаем новое сообщение об ошибке
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show model-load-error mt-2';
+        errorDiv.innerHTML = `
+            <strong>Ошибка!</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        // Вставляем после контейнера выбора модели
+        const container = document.getElementById('model-select-container');
+        if (container) {
+            container.appendChild(errorDiv);
+        }
     }
 
     // Событие при изменении марки
     brandSelect.addEventListener('change', function() {
+        console.log('Марка изменена:', this.value);
         loadModels(this.value);
     });
 
-    // Событие при выборе модели (автозаполнение года)
+    // Событие при выборе модели (автозаполнение года и показ информации)
     modelSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
+        console.log('Модель выбрана:', selectedOption ? selectedOption.textContent : 'не выбрана');
+
         const yearStart = selectedOption.dataset.yearStart;
         const yearEnd = selectedOption.dataset.yearEnd;
         const bodyType = selectedOption.dataset.bodyType;
@@ -444,6 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Автозаполнение года выпуска, если поле пустое
         const yearField = document.getElementById('id_year');
         if (yearField && !yearField.value && yearStart) {
+            console.log('Автозаполнение года:', yearStart);
             yearField.value = yearStart;
         }
 
@@ -453,11 +545,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Функция показа информации о модели
     function showModelInfo(yearStart, yearEnd, bodyType) {
+        console.log('Показ информации о модели:', { yearStart, yearEnd, bodyType });
+
         // Удаляем старую информацию, если есть
         const oldInfo = document.getElementById('model-info');
         if (oldInfo) {
             oldInfo.remove();
         }
+
+        // Получаем выбранную модель
+        const modelSelect = document.getElementById('id_model');
+        const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+        const modelName = selectedOption ? selectedOption.textContent : '';
+
+        // Получаем выбранную марку
+        const brandSelect = document.getElementById('id_brand');
+        const selectedBrandOption = brandSelect.options[brandSelect.selectedIndex];
+        const brandName = selectedBrandOption ? selectedBrandOption.textContent : '';
 
         // Создаем блок с информацией
         const infoDiv = document.createElement('div');
@@ -465,46 +569,65 @@ document.addEventListener('DOMContentLoaded', function() {
         infoDiv.className = 'alert alert-info mt-2';
         infoDiv.style.display = 'none';
 
-        let infoText = 'Информация о модели: ';
+        let infoText = '';
         const infoParts = [];
 
-        if (yearStart) {
-            infoParts.push('производство с ' + yearStart + ' года');
+        if (brandName && modelName) {
+            infoParts.push(`<strong>${brandName} ${modelName}</strong>`);
         }
-        if (yearEnd) {
-            infoParts.push('по ' + yearEnd + ' год');
+
+        if (yearStart || yearEnd) {
+            let yearText = 'производство ';
+            if (yearStart) {
+                yearText += `с ${yearStart} года`;
+            }
+            if (yearEnd) {
+                yearText += yearStart ? ` по ${yearEnd} год` : `до ${yearEnd} года`;
+            }
+            infoParts.push(yearText);
         }
+
         if (bodyType) {
-            infoParts.push('тип кузова: ' + bodyType);
+            infoParts.push(`тип кузова: ${bodyType}`);
         }
 
         if (infoParts.length > 0) {
-            infoText += infoParts.join(', ');
-            infoDiv.innerHTML = '<small><i class="fas fa-info-circle me-1"></i> ' + infoText + '</small>';
+            infoText = infoParts.join(', ');
+            infoDiv.innerHTML = `<small><i class="fas fa-info-circle me-1"></i> ${infoText}</small>`;
             infoDiv.style.display = 'block';
 
             // Вставляем после контейнера выбора модели
-            document.getElementById('model-select-container').appendChild(infoDiv);
+            const container = document.getElementById('model-select-container');
+            if (container) {
+                container.appendChild(infoDiv);
+            }
         }
     }
 
     // Если при загрузке страницы уже выбрана марка, загружаем модели
     {% if form.instance.model %}
         const initialBrandId = {{ form.instance.model.brand.id }};
+        console.log('При загрузке выбрана марка ID:', initialBrandId);
         if (initialBrandId) {
             brandSelect.value = initialBrandId;
             loadModels(initialBrandId);
         }
     {% elif form.brand.value %}
         // Если форма была отправлена с ошибками
-        brandSelect.value = {{ form.brand.value.id }};
-        loadModels({{ form.brand.value.id }});
+        const brandValueId = {{ form.brand.value.id|default:"null" }};
+        console.log('Значение марки из формы:', brandValueId);
+        if (brandValueId) {
+            brandSelect.value = brandValueId;
+            loadModels(brandValueId);
+        }
     {% endif %}
 
     // Валидация формы
     document.getElementById('ad-form').addEventListener('submit', function(event) {
         const brandValue = brandSelect.value;
         const modelValue = modelSelect.value;
+
+        console.log('Валидация формы:', { brandValue, modelValue });
 
         if (!brandValue || !modelValue) {
             event.preventDefault();
@@ -538,6 +661,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const maxSize = 10 * 1024 * 1024; // 10MB
             const files = this.files;
 
+            console.log('Выбрано файлов:', files.length);
+
             if (files.length > maxFiles) {
                 alert(`Максимальное количество файлов: ${maxFiles}`);
                 this.value = '';
@@ -560,6 +685,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Показать предпросмотр изображений
     function showImagePreview(files) {
+        console.log('Показ предпросмотра для файлов:', files.length);
+
         const previewContainer = document.getElementById('uploaded-photos') ||
                                (function() {
                                    const container = document.createElement('div');
@@ -593,7 +720,8 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.readAsDataURL(files[i]);
         }
     }
+
+    console.log('Инициализация завершена');
 });
 </script>
-    <script src="{% static 'js/dynamic-models.js' %}"></script>
 {% endblock %}

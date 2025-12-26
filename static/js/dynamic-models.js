@@ -7,6 +7,7 @@ class DynamicModelsLoader {
 
         this.brandSelector = options.brandSelector || '#id_brand';
         this.modelSelector = options.modelSelector || '#id_model';
+        // Используем относительный путь, так как этот файл статический
         this.apiUrl = options.apiUrl || '/advertisements/models-api/';
         this.initialize();
     }
@@ -97,7 +98,8 @@ class DynamicModelsLoader {
                 data.forEach((model, index) => {
                     const option = document.createElement('option');
                     option.value = model.id;
-                    option.textContent = model.full_name || model.name;
+                    // Используем только имя модели без марки
+                    option.textContent = model.name;
 
                     // Добавляем data-атрибуты если есть
                     if (model.year_start) option.dataset.yearStart = model.year_start;
@@ -105,23 +107,10 @@ class DynamicModelsLoader {
                     if (model.body_type) option.dataset.bodyType = model.body_type;
 
                     modelSelect.appendChild(option);
-
-                    // Проверяем, нужно ли выбрать эту модель
-                    if (this.originalBrandValue && model.id.toString() === this.originalBrandValue) {
-                        option.selected = true;
-                    }
                 });
             }
 
             modelSelect.disabled = false;
-
-            // Если была выбрана модель изначально, восстанавливаем выбор
-            if (this.originalBrandValue) {
-                const savedOption = modelSelect.querySelector(`option[value="${this.originalBrandValue}"]`);
-                if (savedOption) {
-                    savedOption.selected = true;
-                }
-            }
 
             // Триггерим событие изменения
             modelSelect.dispatchEvent(new Event('change'));
@@ -129,35 +118,12 @@ class DynamicModelsLoader {
         } catch (error) {
             console.error('Error loading models:', error);
             modelSelect.innerHTML = '<option value="">Ошибка загрузки моделей</option>';
-
-            // Показываем сообщение об ошибке
-            this.showError(`Ошибка загрузки моделей: ${error.message}`);
         } finally {
             // Скрываем индикатор загрузки
             if (loadingIndicator) {
                 loadingIndicator.style.display = 'none';
                 console.log('Hiding loading indicator');
             }
-        }
-    }
-
-    showError(message) {
-        // Удаляем старые сообщения об ошибках
-        const oldError = document.querySelector('.model-load-error');
-        if (oldError) oldError.remove();
-
-        // Создаем новое сообщение об ошибке
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger alert-dismissible fade show model-load-error mt-2';
-        errorDiv.innerHTML = `
-            <strong>Ошибка!</strong> ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        // Вставляем после контейнера выбора модели
-        const container = document.getElementById('model-select-container');
-        if (container) {
-            container.appendChild(errorDiv);
         }
     }
 }
@@ -170,12 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('id_brand') && document.getElementById('id_model')) {
         new DynamicModelsLoader();
     }
-
-    // Также добавляем глобальную функцию для ручной загрузки моделей
-    window.loadCarModels = function(brandId) {
-        const loader = new DynamicModelsLoader();
-        loader.loadModels(brandId);
-    };
 });
 
 // Экспорт для использования в других модулях
