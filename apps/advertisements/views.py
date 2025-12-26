@@ -1067,50 +1067,62 @@ def send_message(request):
 
 @require_GET
 def api_models_by_brand(request):
-    """API для получения моделей автомобилей по бренду (ИСПРАВЛЕННЫЙ)"""
-    brand_slug = request.GET.get('brand')
+    """API для получения моделей автомобилей по бренду"""
     brand_id = request.GET.get('brand_id')
+    brand_slug = request.GET.get('brand')
 
-    if not brand_slug and not brand_id:
+    if not brand_id and not brand_slug:
         return JsonResponse([], safe=False)
 
     try:
-        if brand_slug:
-            # Ищем по slug
-            brand = CarBrand.objects.filter(slug=brand_slug).first()
-            if not brand:
-                return JsonResponse([], safe=False)
-            models = CarModel.objects.filter(
-                brand_id=brand.id,
-                is_active=True
-            ).order_by('name')
-        else:
-            # Ищем по id
-            models = CarModel.objects.filter(
-                brand_id=brand_id,
-                is_active=True
-            ).order_by('name')
+        models_qs = CarModel.objects.filter(is_active=True)
 
-        data = [
-            {
+        if brand_id:
+            # Пытаемся получить бренд по ID
+            try:
+                brand = CarBrand.objects.get(id=brand_id, is_active=True)
+                models_qs = models_qs.filter(brand=brand)
+            except (ValueError, CarBrand.DoesNotExist):
+                return JsonResponse([], safe=False)
+        elif brand_slug:
+            # Получаем бренд по slug
+            try:
+                brand = CarBrand.objects.get(slug=brand_slug, is_active=True)
+                models_qs = models_qs.filter(brand=brand)
+            except CarBrand.DoesNotExist:
+                return JsonResponse([], safe=False)
+
+        # Получаем данные
+        models = models_qs.order_by('name')
+
+        data = []
+        for model in models:
+            model_data = {
                 'id': model.id,
                 'slug': model.slug,
                 'name': model.name,
-                'year_start': model.year_start,
-                'year_end': model.year_end,
-                'body_type': model.body_type,
-                'full_name': f"{model.brand.name} {model.name}"
+                # УБИРАЕМ full_name, оставляем только имя модели
+                'full_name': model.name  # Теперь только имя модели, без марки
             }
-            for model in models
-        ]
+
+            # Добавляем опциональные поля только если они есть
+            if model.year_start:
+                model_data['year_start'] = model.year_start
+            if model.year_end:
+                model_data['year_end'] = model.year_end
+            if model.body_type:
+                model_data['body_type'] = model.body_type
+
+            data.append(model_data)
 
         return JsonResponse(data, safe=False)
 
     except Exception as e:
-        logger.error(f"Ошибка в api_models_by_brand: {str(e)}")
+        logger.error(f"Ошибка в api_models_by_brand: {str(e)}", exc_info=True)
         return JsonResponse(
-            {'error': str(e), 'message': 'Ошибка загрузки моделей'},
-            status=400
+            {'error': 'Internal server error', 'message': str(e)},
+            status=500,
+            safe=False
         )
 
 

@@ -58,6 +58,24 @@
 .progress-bar {
     transition: width 0.3s ease;
 }
+
+#model-loading {
+    transition: opacity 0.3s ease;
+}
+
+#model-loading.show {
+    display: block !important;
+}
+
+.alert.model-load-error {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 </style>
 {% endblock %}
 
@@ -368,39 +386,41 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            // Очищаем и заполняем select
-            modelSelect.innerHTML = '<option value="">Выберите модель</option>';
+        // Очищаем и заполняем select
+        modelSelect.innerHTML = '<option value="">Выберите модель</option>';
 
-            if (data.length === 0) {
-                modelSelect.innerHTML += '<option value="" disabled>Нет доступных моделей</option>';
-            } else {
-                data.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model.id; // Используем ID, а не slug
-                    option.textContent = model.full_name || model.name;
+        if (data.length === 0) {
+            modelSelect.innerHTML += '<option value="" disabled>Нет доступных моделей</option>';
+        } else {
+            data.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.id;
+                // ИСПРАВЛЯЕМ: используем только имя модели, без марки
+                option.textContent = model.name || model.full_name;
 
-                    // Добавляем дополнительную информацию в data-атрибуты
-                    option.dataset.yearStart = model.year_start || '';
-                    option.dataset.yearEnd = model.year_end || '';
-                    option.dataset.bodyType = model.body_type || '';
+                // Добавляем дополнительную информацию в data-атрибуты
+                option.dataset.yearStart = model.year_start || '';
+                option.dataset.yearEnd = model.year_end || '';
+                option.dataset.bodyType = model.body_type || '';
+                option.dataset.modelName = model.name || '';
 
-                    modelSelect.appendChild(option);
-                });
+                modelSelect.appendChild(option);
+            });
+        }
+
+        modelSelect.disabled = false;
+        modelLoading.style.display = 'none';
+        $(modelSelect).trigger('change');
+
+        // Если есть сохраненная модель, выбираем ее
+        {% if form.instance.model %}
+            const savedModelId = {{ form.instance.model.id }};
+            if (savedModelId) {
+                modelSelect.value = savedModelId;
+                $(modelSelect).trigger('change');
             }
-
-            modelSelect.disabled = false;
-            modelLoading.style.display = 'none';
-            $(modelSelect).trigger('change');
-
-            // Если есть сохраненная модель, выбираем ее
-            {% if form.instance.model %}
-                const savedModelId = {{ form.instance.model.id }};
-                if (savedModelId) {
-                    modelSelect.value = savedModelId;
-                    $(modelSelect).trigger('change');
-                }
-            {% endif %}
-        })
+        {% endif %}
+    })
         .catch(error => {
             console.error('Ошибка загрузки моделей:', error);
             modelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
