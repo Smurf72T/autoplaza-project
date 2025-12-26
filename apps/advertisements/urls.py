@@ -11,7 +11,8 @@ urlpatterns = [
     # API endpoints
     path('api/search/', views.AdSearchAPIView.as_view(), name='api_search'),
     path('api/<int:ad_id>/similar/', views.SimilarAdsAPIView.as_view(), name='api_similar'),
-    path('models-api/', views.api_models_by_brand, name='api_models'),
+    path('models-api/', views.api_models_by_brand, name='api_models_by_brand'),  # ДЛЯ ФОРМЫ
+    path('api/models/', views.api_models_by_brand, name='api_models'),  # ДЛЯ ФИЛЬТРОВ
 
     # Создание объявления - используем CarAdCreateView
     path('create/', views.CarAdCreateView.as_view(), name='ad_create'),

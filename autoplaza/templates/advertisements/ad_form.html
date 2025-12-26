@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $(modelSelect).trigger('change');
 
         // ИСПРАВЛЕННЫЙ URL: Используем правильный API endpoint
-        fetch('/advertisements/models-api/?brand_id=' + encodeURIComponent(brandId), {
+        fetch(`{% url "advertisements:api_models_by_brand" %}?brand_id=${encodeURIComponent(brandId)}`, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -575,4 +575,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+    <script src="{% static 'js/dynamic-models.js' %}"></script>
 {% endblock %}

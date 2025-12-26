@@ -65,7 +65,7 @@ class CarFilters {
 
         try {
             // AJAX запрос
-            const response = await fetch(`/api/models/?brand_id=${brandId}`);
+            const response = await fetch(`/advertisements/models-api/?brand_id=${brandId}`);
 
             if (!response.ok) {
                 throw new Error(`Ошибка HTTP: ${response.status}`);
