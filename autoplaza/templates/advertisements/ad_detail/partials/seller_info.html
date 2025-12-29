@@ -1,0 +1,37 @@
+<!-- templates/advertisements/ad_detail/partials/seller_info.html -->
+{% load humanize %}
+<!-- Информация о продавце -->
+<div class="mb-4">
+    <div class="d-flex align-items-center mb-3">
+        <div class="seller-avatar me-3">
+            {% if ad.owner.avatar %}
+                <img src="{{ ad.owner.avatar.url }}"
+                     alt="{{ ad.owner.get_full_name }}"
+                     class="rounded-circle"
+                     style="width: 50px; height: 50px; object-fit: cover;">
+            {% else %}
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                     style="width: 50px; height: 50px;">
+                    {{ ad.owner.get_full_name|slice:":1"|upper }}
+                </div>
+            {% endif %}
+        </div>
+        <div>
+            <h6 class="mb-0">{{ ad.owner.get_full_name|default:ad.owner.username }}</h6>
+            <small class="text-muted">
+                <i class="fas fa-user me-1"></i>
+                {{ ad.get_owner_type_display }}
+            </small>
+        </div>
+    </div>
+
+    {% if ad.owner_type == 'dealer' and ad.owner.dealer_profile %}
+    <div class="dealer-info border-top pt-3">
+        <h6 class="mb-2">{{ ad.owner.dealer_profile.company_name }}</h6>
+        <small class="text-muted">
+            <i class="fas fa-star text-warning"></i>
+            Рейтинг: {{ ad.owner.dealer_profile.rating|default:"-" }}
+        </small>
+    </div>
+    {% endif %}
+</div>

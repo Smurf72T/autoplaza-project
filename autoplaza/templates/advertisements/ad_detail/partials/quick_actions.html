@@ -1,0 +1,26 @@
+<!-- templates/advertisements/ad_detail/partials/quick_actions.html -->
+{% load humanize %}
+<!-- Быстрые действия -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h5 class="h6 mb-3">Быстрые действия</h5>
+        <div class="d-grid gap-2">
+            <a href="{% url 'advertisements:ad_list' %}?brand={{ ad.model.brand.slug }}"
+               class="btn btn-outline-secondary">
+                <i class="fas fa-search me-2"></i>Искать {{ ad.model.brand.name }}
+            </a>
+
+            {% if user.is_authenticated and user == ad.owner %}
+            <a href="{% url 'advertisements:ad_edit' ad.slug %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-2"></i>Редактировать
+            </a>
+
+            <button class="btn btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteModal">
+                <i class="fas fa-trash me-2"></i>Удалить
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,53 @@
+<!-- templates/advertisements/ad_detail/partials/modals/message_modal.html -->
+<!-- Модальное окно сообщения -->
+<div class="modal fade" id="messageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Написать сообщение</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'advertisements:send_ad_message' ad.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="ad_id" value="{{ ad.id }}">
+                <div class="modal-body">
+                    {% if not user.is_authenticated %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Чтобы отправить сообщение, <a href="{% url 'users:login' %}">войдите</a> или
+                        <a href="{% url 'users:register' %}">зарегистрируйтесь</a>.
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label">Ваше имя</label>
+                        <input type="text" class="form-control" name="name"
+                               value="{{ user.get_full_name|default:user.username }}"
+                               {% if user.is_authenticated %}readonly{% endif %} required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ваш телефон</label>
+                        <input type="tel" class="form-control" name="phone"
+                               value="{{ user.phone|default:'' }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Сообщение</label>
+                        <textarea class="form-control" name="message" rows="4" required>
+Здравствуйте! Заинтересовался вашим объявлением "{{ ad.title }}".
+Можете рассказать подробнее?
+                        </textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary"
+                            {% if not user.is_authenticated %}disabled{% endif %}>
+                        Отправить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

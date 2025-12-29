@@ -1,0 +1,15 @@
+<!-- templates/advertisements/ad_detail/partials/similar_ads.html -->
+{% load humanize %}
+<!-- Похожие объявления -->
+{% if similar_ads %}
+<div class="mt-5">
+    <h3 class="h4 mb-4">Похожие объявления</h3>
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+        {% for similar_ad in similar_ads|slice:":4" %}
+        <div class="col">
+            {% include 'advertisements/partials/ad_card.html' with ad=similar_ad %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

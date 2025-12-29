@@ -1,0 +1,29 @@
+<!-- templates/advertisements/ad_detail/partials/contact_buttons.html -->
+{% load humanize %}
+<!-- Контактные кнопки -->
+<div class="d-grid gap-2 mb-3">
+    {% if ad.owner.phone %}
+    <button class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#phoneModal">
+        <i class="fas fa-phone-alt me-2"></i>Показать телефон
+    </button>
+    {% endif %}
+
+    <button class="btn btn-outline-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#messageModal">
+        <i class="fas fa-envelope me-2"></i>Написать сообщение
+    </button>
+
+    {% if user.is_authenticated %}
+    <button class="btn btn-outline-danger"
+            onclick="toggleFavorite(AD_ID)"
+            id="favorite-btn">
+        <i class="fas fa-heart" id="favorite-icon"></i>
+        <span id="favorite-text">
+            {% if is_favorite %}Удалить из избранного{% else %}В избранное{% endif %}
+        </span>
+    </button>
+    {% endif %}
+</div>

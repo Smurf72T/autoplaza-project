@@ -1,0 +1,22 @@
+<!-- templates/advertisements/ad_detail/partials/seller_card.html -->
+{% load humanize %}
+<!-- Карточка продавца -->
+<div class="card border-0 shadow-sm mb-4 sticky-top" style="top: 20px;">
+    <div class="card-body">
+        <h4 class="h5 card-title mb-3">Контакты продавца</h4>
+
+        <!-- Информация о продавце -->
+        {% include 'advertisements/ad_detail/partials/seller_info.html' %}
+
+        <!-- Контактные кнопки -->
+        {% include 'advertisements/ad_detail/partials/contact_buttons.html' %}
+
+        <!-- Статистика -->
+        {% include 'advertisements/ad_detail/partials/stats.html' %}
+
+        <!-- ID объявления -->
+        <div class="border-top pt-3 mt-3">
+            <small class="text-muted">ID: {{ ad.id }}</small>
+        </div>
+    </div>
+</div>

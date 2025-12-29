@@ -39,6 +39,9 @@
 
     {% block extra_js %}
         <script src="{% static 'js/filters.js' %}"></script>
+        {% if '/advertisement/' in request.path %}
+            <script src="{% static 'js/advertisements/ad_detail.js' %}"></script>
+        {% endif %}
     {% endblock %}
 
     <script>

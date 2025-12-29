@@ -1,0 +1,37 @@
+<!-- templates/advertisements/ad_detail/partials/gallery.html -->
+<!-- Галерея фотографий -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        {% if ad.photos.all %}
+            <div class="main-photo mb-3">
+                {% with ad.photos.all|first as main_photo %}
+                <img src="{{ main_photo.image.url }}"
+                     alt="{{ ad.title }}"
+                     class="img-fluid rounded"
+                     id="main-photo">
+                {% endwith %}
+            </div>
+
+            {% if ad.photos.count > 1 %}
+            <div class="photo-thumbnails">
+                <div class="row g-2">
+                    {% for photo in ad.photos.all %}
+                    <div class="col-3 col-sm-2">
+                        <img src="{{ photo.thumbnail.url|default:photo.image.url }}"
+                             alt="{{ ad.title }}"
+                             class="img-thumbnail photo-thumbnail {% if forloop.first %}active{% endif %}"
+                             data-full="{{ photo.image.url }}"
+                             onclick="changeMainPhoto('{{ photo.image.url }}', this)">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5 bg-light rounded">
+                <i class="fas fa-car fa-5x text-muted mb-3"></i>
+                <p class="text-muted">Нет фотографий</p>
+            </div>
+        {% endif %}
+    </div>
+</div>

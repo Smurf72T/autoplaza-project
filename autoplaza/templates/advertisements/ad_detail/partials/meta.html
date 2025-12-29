@@ -1,0 +1,10 @@
+<!-- templates/advertisements/ad_detail/partials/meta.html -->
+<!-- Meta теги для SEO и социальных сетей -->
+<meta name="description" content="{{ ad.description|truncatechars:150 }}">
+<meta property="og:title" content="{{ ad.title }}">
+<meta property="og:description" content="{{ ad.description|truncatechars:150 }}">
+{% if ad.get_main_photo %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ ad.get_main_photo.image.url }}">
+{% endif %}
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:type" content="website">

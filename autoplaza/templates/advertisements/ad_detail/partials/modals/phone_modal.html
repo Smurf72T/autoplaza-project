@@ -1,0 +1,20 @@
+<!-- templates/advertisements/ad_detail/partials/modals/phone_modal.html -->
+<!-- Модальное окно телефона -->
+<div class="modal fade" id="phoneModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Контактный телефон</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                {% if ad.owner.phone %}
+                <h3 class="display-6 mb-4">{{ ad.owner.phone }}</h3>
+                <p class="text-muted">Позвоните продавцу для уточнения деталей</p>
+                {% else %}
+                <p class="text-muted">Телефон не указан</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

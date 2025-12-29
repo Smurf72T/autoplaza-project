@@ -1,4 +1,4 @@
-<!-- templates/advertisements/ad_detail.html -->
+<!-- templates/advertisements/ad_detail/ad_detail.html -->
 {% extends 'base.html' %}
 {% load static %}
 {% load humanize %}
@@ -59,7 +59,5 @@
     const CSRF_TOKEN = '{{ csrf_token }}';
     const LOGIN_URL = "{% url 'users:login' %}";
     const CURRENT_PATH = "{{ request.path }}";
-    const FAVORITE_TOGGLE_URL = `/advertisements/${AD_ID}/favorite/toggle/`;
-    const VIEW_URL = `/advertisements/${AD_ID}/view/`;
 </script>
 {% endblock %}

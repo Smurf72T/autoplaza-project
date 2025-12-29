@@ -1,0 +1,19 @@
+<!-- templates/advertisements/ad_detail/partials/stats.html -->
+{% load humanize %}
+<!-- Статистика объявления -->
+<div class="border-top pt-3">
+    <div class="row text-center">
+        <div class="col-6">
+            <div class="stat-item">
+                <div class="text-muted small">Просмотры</div>
+                <div class="h6 mb-0">{{ ad.views|default:0 }}</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="stat-item">
+                <div class="text-muted small">Опубликовано</div>
+                <div class="h6 mb-0">{{ ad.created_at|date:"d.m.Y" }}</div>
+            </div>
+        </div>
+    </div>
+</div>

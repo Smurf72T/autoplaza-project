@@ -1,0 +1,19 @@
+<!-- templates/advertisements/ad_detail/partials/breadcrumbs.html -->
+{% load humanize %}
+<!-- Хлебные крошки -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{% url 'core:home' %}">Главная</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'advertisements:ad_list' %}">Объявления</a>
+        </li>
+        {% if ad.model.brand %}
+        <li class="breadcrumb-item">
+            <a href="{% url 'cars:brand_detail' ad.model.brand.slug %}">{{ ad.model.brand.name }}</a>
+        </li>
+        {% endif %}
+        <li class="breadcrumb-item active" aria-current="page">{{ ad.title|truncatechars:30 }}</li>
+    </ol>
+</nav>
