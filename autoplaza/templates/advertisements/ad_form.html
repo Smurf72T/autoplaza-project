@@ -137,7 +137,7 @@
                 <div class='card-body p-4'>
                     <!-- Скрытый элемент для передачи API URL в JavaScript -->
                     <div id="api-urls"
-                         data-models-api-url="{% url 'advertisements:api_models_by_brand' %}"
+                         data-models-api-url="{% url 'advertisements:api_models' %}"
                          style="display: none;">
                     </div>
 
@@ -212,10 +212,7 @@
 
                         <!-- Основные поля -->
                         <div class='row mb-4'>
-                            <div class='col-md-6'>
-                                {{ form.title|as_crispy_field }}
-                            </div>
-                            <div class='col-md-6'>
+                            <div class='col-md-12'>
                                 {{ form.price|as_crispy_field }}
                             </div>
                         </div>
@@ -316,7 +313,6 @@
                                 </small>
                             </div>
 
-                            {{ form.photos|as_crispy_field }}
 
                             <!-- Предпросмотр загруженных фото -->
                             {% if form.instance.pk and form.instance.photos.all %}
@@ -529,8 +525,11 @@
             $(modelSelect).html('<option value="">Загрузка моделей...</option>');
 
             // API запрос
-            const apiUrl = `/advertisements/models-api/?brand_id=${brandId}`;
+            const apiUrlsElement = document.getElementById('api-urls');
+            const modelsApiUrl = apiUrlsElement ? apiUrlsElement.getAttribute('data-models-api-url') : '';
+            const apiUrl = `${modelsApiUrl}?brand_id=${brandId}`;
             console.log(`Fetching from: ${apiUrl}`);
+            console.log('Using API URL:', apiUrl);
 
             fetch(apiUrl)
                 .then(response => {

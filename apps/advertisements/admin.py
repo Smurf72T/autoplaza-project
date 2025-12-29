@@ -8,6 +8,8 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
 
+from pyexpat.errors import messages
+
 from .models import CarAd, CarPhoto, CarAdFeature, FavoriteAd, SearchHistory, CarView
 
 
@@ -300,8 +302,34 @@ class CarAdAdmin(admin.ModelAdmin):
         'region',
     ]
 
+    @admin.action(description=_('Перегенерировать заголовки'))
+    def regenerate_titles(self, request, queryset):
+        """Перегенерировать заголовки для выбранных объявлений"""
+        count = 0
+        for ad in queryset:
+            # Генерируем новый заголовок
+            new_title = ad.generate_title()
+            if new_title != ad.title:
+                ad.title = new_title
+                ad.save(update_fields=['title'])
+                count += 1
+
+        if count > 0:
+            self.message_user(
+                request,
+                _('Заголовки перегенерированы для {} объявлений').format(count),
+                messages.SUCCESS
+            )
+        else:
+            self.message_user(
+                request,
+                _('Нет объявлений для перегенерации заголовков'),
+                messages.WARNING
+            )
+
     # Действия
     actions = [
+        regenerate_titles,
         activate_ads,
         send_for_moderation,
         mark_as_sold,

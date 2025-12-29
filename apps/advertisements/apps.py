@@ -5,3 +5,6 @@ class AdvertisementsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.advertisements'
     verbose_name = 'Объявления'
+
+    def ready(self):
+        import apps.advertisements.signals

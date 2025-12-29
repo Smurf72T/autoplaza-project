@@ -1,5 +1,8 @@
 # apps/advertisements/forms.py
+import datetime
 import re
+from decimal import Decimal
+
 from django import forms
 from django.core.validators import MinValueValidator, MaxValueValidator
 from .models import CarAd, CarPhoto
@@ -17,8 +20,257 @@ class MultipleFileInput(forms.ClearableFileInput):
         super().__init__(attrs)
 
 
+class SimpleCarAdForm(forms.ModelForm):
+    """Упрощенная форма создания объявления с минимальным набором полей"""
+
+    brand = forms.ModelChoiceField(
+        queryset=CarBrand.objects.filter(is_active=True),
+        label='Марка',
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_brand',
+        })
+    )
+
+    model = forms.ModelChoiceField(
+        queryset=CarModel.objects.none(),
+        label='Модель',
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_model',
+        })
+    )
+
+    photos = forms.FileField(
+        label='Фотографии',
+        required=False,
+        widget=MultipleFileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*'
+        })
+    )
+
+    class Meta:
+        model = CarAd
+        fields = [
+            # Основные поля из шаблона
+            'price', 'year', 'mileage', 'mileage_unit',
+            'engine_volume', 'engine_power',
+            'fuel_type', 'transmission_type', 'drive_type',
+            'condition', 'steering_wheel', 'doors',
+            'color_exterior', 'color_interior', 'seats',
+            'city', 'region', 'vin', 'photos',
+            'has_tuning', 'service_history', 'is_negotiable',
+            'description'
+        ]
+        widgets = {
+            # 'title': forms.TextInput(attrs={
+            #     'class': 'form-control',
+            #     'placeholder': 'Например: Toyota Camry 2015'
+            # }),
+            'price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'step': '1000',
+                'placeholder': '₽'
+            }),
+            'year': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1900',
+                'max': '2024',
+                'placeholder': 'Год выпуска'
+            }),
+            'mileage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'placeholder': '0'
+            }),
+            'mileage_unit': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'engine_volume': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.1',
+                'min': '0.5',
+                'max': '10',
+                'placeholder': '1.6'
+            }),
+            'engine_power': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '50',
+                'max': '1000',
+                'placeholder': '150'
+            }),
+            'fuel_type': forms.Select(attrs={'class': 'form-select'}),
+            'transmission_type': forms.Select(attrs={'class': 'form-select'}),
+            'drive_type': forms.Select(attrs={'class': 'form-select'}),
+            'condition': forms.Select(attrs={'class': 'form-select'}),
+            'steering_wheel': forms.Select(attrs={'class': 'form-select'}),
+            'doors': forms.Select(attrs={'class': 'form-select'}),
+            'color_exterior': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Черный'
+            }),
+            'color_interior': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Черный'
+            }),
+            'seats': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '2',
+                'max': '9',
+                'placeholder': '5'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Москва'
+            }),
+            'region': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Московская область',
+            }),
+            'vin': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'XXXXXXXXXXXXXXXXX',
+                'maxlength': '17'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Опишите состояние автомобиля, особенности...'
+            }),
+            'has_tuning': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'service_history': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_negotiable': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Установим значения по умолчанию
+        self.fields['mileage_unit'].initial = 'км'
+        self.fields['condition'].initial = 'used'
+        self.fields['steering_wheel'].initial = 'left'
+        self.fields['fuel_type'].initial = 'petrol'
+        self.fields['transmission_type'].initial = 'automatic'
+        self.fields['drive_type'].initial = 'front'
+        self.fields['is_negotiable'].initial = False
+        self.fields['has_tuning'].initial = False
+        self.fields['service_history'].initial = False
+        self.fields['region'].initial = 'Москва'
+        self.fields['doors'].initial = 4
+        self.fields['seats'].initial = 5
+
+        # Установим начальное значение для brand, если редактируем существующее объявление
+        if self.instance and self.instance.pk and self.instance.model:
+            self.fields['brand'].initial = self.instance.model.brand
+            self.fields['model'].queryset = CarModel.objects.filter(
+                brand=self.instance.model.brand,
+                is_active=True
+            )
+            self.fields['model'].initial = self.instance.model
+        else:
+            # При создании нового объявления
+            self.fields['model'].queryset = CarModel.objects.none()
+
+        # Динамически обновляем queryset для model при отправке формы
+        if 'brand' in self.data:
+            try:
+                brand_id = int(self.data.get('brand'))
+                self.fields['model'].queryset = CarModel.objects.filter(
+                    brand_id=brand_id,
+                    is_active=True
+                )
+            except (ValueError, TypeError):
+                self.fields['model'].queryset = CarModel.objects.none()
+        elif 'brand' in self.initial:
+            # Если передано начальное значение для brand
+            try:
+                brand_id = int(self.initial.get('brand'))
+                self.fields['model'].queryset = CarModel.objects.filter(
+                    brand_id=brand_id,
+                    is_active=True
+                )
+            except (ValueError, TypeError):
+                self.fields['model'].queryset = CarModel.objects.none()
+
+    def clean(self):
+        """Валидация формы"""
+        cleaned_data = super().clean()
+
+        # Проверяем, что выбранная модель принадлежит выбранному бренду
+        brand = cleaned_data.get('brand')
+        model = cleaned_data.get('model')
+
+        if brand and model:
+            if model.brand != brand:
+                self.add_error('model', 'Выбранная модель не принадлежит выбранной марке')
+        return cleaned_data
+
+    def save(self, commit=True):
+        # Сохраняем объект CarAd
+        car_ad = super().save(commit=False)
+
+        # Получаем данные из формы
+        brand = self.cleaned_data.get('brand')
+        model = self.cleaned_data.get('model')
+
+        # photos = self.request.FILES.getlist('photos')
+        # for i, photo in enumerate(photos):
+        #     CarPhoto.objects.create(
+        #         car_ad=self.object,
+        #         image=photo,
+        #         is_main=(i == 0),
+        #         position=i
+        #     )
+
+        # Устанавливаем модель из формы
+        if model:
+            car_ad.model = model
+
+        # Устанавливаем brand из выбранной модели
+        if model and model.brand:
+            car_ad.brand = model.brand
+        elif brand:
+            car_ad.brand = brand
+
+        # Устанавливаем значения по умолчанию
+        car_ad.price_currency = 'RUB'
+        car_ad.owner_type = 'private'
+        car_ad.status = 'draft'
+        car_ad.is_active = True
+        car_ad.is_new = True
+
+        # Автогенерация заголовка, если пустой
+        if not car_ad.title or car_ad.title.strip() == '':
+            model = self.cleaned_data.get('model')
+            year = self.cleaned_data.get('year')
+            if model and year:
+                car_ad.title = f"{model.brand.name} {model.name} {year}"
+            else:
+                car_ad.title = "Автомобиль"
+
+        # Устанавливаем владельца из запроса
+        if hasattr(self, 'request') and self.request.user.is_authenticated:
+            car_ad.owner = self.request.user
+
+        if commit:
+            car_ad.save()
+
+        return car_ad
+
+
+
 class CarAdForm(forms.ModelForm):
-    """Форма создания/редактирования объявления"""
+    """Упрощенная форма создания/редактирования объявления"""
 
     # Дополнительное поле для марки (не сохраняется в модель, используется для фильтрации моделей)
     brand = forms.ModelChoiceField(
@@ -56,84 +308,23 @@ class CarAdForm(forms.ModelForm):
 
     class Meta:
         model = CarAd
-        fields = [
-            'title', 'description', 'price', 'is_negotiable',
-            'year', 'vin', 'mileage', 'mileage_unit',
-            'engine_volume', 'engine_power', 'fuel_type',
-            'transmission_type', 'drive_type', 'condition',
-            'color_exterior', 'color_interior', 'city', 'region',
-            'seats', 'doors', 'steering_wheel', 'has_tuning', 'service_history'
-        ]
+        # Указываем только поля модели, которые будут в форме
+        # Поле 'brand' (дополнительное) не входит в модель, поэтому его нет в fields
+        fields = SimpleCarAdForm.Meta.fields # ← используем те же поля
         widgets = {
-            'title': forms.TextInput(attrs={
+            'year': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Краткое описание',
-                'maxlength': '200'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 5,
-                'placeholder': 'Подробное описание автомобиля...',
-                'maxlength': '5000'
+                'min': '1900',
+                'max': '2025'
             }),
             'price': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '0',
                 'step': '1000'
             }),
-            'year': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '1900',
-                'max': '2024'
-            }),
-            'vin': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '17 символов',
-                'maxlength': '17',
-                'title': 'VIN должен содержать 17 символов (латинские буквы и цифры)'
-            }),
-            'mileage': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '0',
-                'step': '1000'
-            }),
-            'engine_volume': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.1',
-                'min': '0.5',
-                'max': '10.0'
-            }),
-            'engine_power': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '0',
-                'step': '10'
-            }),
             'city': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Город'
-            }),
-            'region': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Регион'
-            }),
-            'seats': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '1',
-                'max': '20'
-            }),
-            'doors': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '2',
-                'max': '6'
-            }),
-            'is_negotiable': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
-            'has_tuning': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
-            'service_history': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
             }),
         }
 
@@ -162,86 +353,36 @@ class CarAdForm(forms.ModelForm):
             except (ValueError, TypeError):
                 self.fields['model'].queryset = CarModel.objects.none()
 
-        # Настройка полей выбора с улучшенными атрибутами
-        select_fields = [
-            'fuel_type', 'transmission_type', 'drive_type',
-            'condition', 'steering_wheel', 'mileage_unit'
-        ]
-
-        for field_name in select_fields:
-            self.fields[field_name].widget.attrs.update({
-                'class': 'form-select',
-                'data-choice': 'true'
-            })
-
-        # Делаем некоторые поля необязательными с улучшенными подсказками
-        optional_fields = {
-            'vin': {'required': False, 'help_text': 'Необязательно'},
-            'engine_volume': {'required': False, 'help_text': 'л'},
-            'engine_power': {'required': False, 'help_text': 'л.с.'},
-            'seats': {'required': False, 'help_text': 'шт.'},
-            'doors': {'required': False, 'help_text': 'шт.'},
-            'color_exterior': {'required': False, 'help_text': 'Цвет кузова'},
-            'color_interior': {'required': False, 'help_text': 'Цвет салона'},
-        }
-
-        for field_name, attrs in optional_fields.items():
-            self.fields[field_name].required = attrs['required']
-            if 'help_text' in attrs:
-                self.fields[field_name].help_text = attrs['help_text']
-                self.fields[field_name].widget.attrs['placeholder'] = attrs['help_text']
-
-        # Добавляем валидаторы
-        current_year = 2024
-        self.fields['year'].validators.extend([
-            MinValueValidator(1900),
-            MaxValueValidator(current_year)
-        ])
-
-        self.fields['price'].validators.append(MinValueValidator(0))
-        self.fields['mileage'].validators.append(MinValueValidator(0))
-
-    def clean_vin(self):
-        """Валидация VIN номера"""
-        vin = self.cleaned_data.get('vin')
-        if vin:
-            vin = vin.upper().strip()
-            # Проверка длины VIN
-            if len(vin) != 17:
-                raise forms.ValidationError('VIN должен содержать ровно 17 символов')
-            # Проверка допустимых символов
-            if not re.match(r'^[A-HJ-NPR-Z0-9]{17}$', vin):
-                raise forms.ValidationError('VIN содержит недопустимые символы')
-        return vin
-
-    def clean_price(self):
-        """Валидация цены"""
-        price = self.cleaned_data.get('price')
-        if price and price < 0:
-            raise forms.ValidationError('Цена не может быть отрицательной')
-        return price
-
-    def clean_mileage(self):
-        """Валидация пробега"""
-        mileage = self.cleaned_data.get('mileage')
-        if mileage and mileage < 0:
-            raise forms.ValidationError('Пробег не может быть отрицательным')
-        return mileage
-
     def save(self, commit=True):
-        """Переопределяем save для обработки поля brand"""
-        # Сначала сохраняем модель CarAd без коммита
+        """Переопределяем save для установки значений по умолчанию"""
         car_ad = super().save(commit=False)
-
-        # Устанавливаем brand из выбранной модели (автоматически будет через ForeignKey)
-        # Или можно установить явно, если нужно:
+        
+        # Устанавливаем значения по умолчанию для обязательных полей
+        if not car_ad.title:
+            car_ad.title = f"{car_ad.model.brand.name} {car_ad.model.name} {car_ad.year}"
+        
+        car_ad.price_currency = 'RUB'
+        car_ad.mileage = 0
+        car_ad.mileage_unit = 'км'
+        car_ad.condition = 'used'
+        car_ad.owner_type = 'private'
+        car_ad.region = car_ad.city if car_ad.city else 'Москва'
+        car_ad.steering_wheel = 'left'
+        car_ad.has_tuning = False
+        car_ad.service_history = False
+        car_ad.is_negotiable = False
+        car_ad.status = 'draft'
+        car_ad.is_active = True
+        car_ad.is_new = True
+        
+        # Устанавливаем brand из выбранной модели
         if car_ad.model and car_ad.model.brand:
             car_ad.brand = car_ad.model.brand
-
+        
         if commit:
             car_ad.save()
-            self.save_m2m()  # Если есть ManyToMany поля
-
+            self.save_m2m()
+        
         return car_ad
 
 

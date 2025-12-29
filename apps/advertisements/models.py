@@ -174,12 +174,12 @@ class CarAd(TimeStampedModel):
         ]
 
     # === Основная информация (из обеих моделей) ===
-    title = models.CharField(_('Заголовок'), max_length=200)
+    title = models.CharField(_('Заголовок'), max_length=200, blank=True)
     slug = models.SlugField(_('Slug'), max_length=220, unique=True, blank=True)
     description = models.TextField(_('Описание'))
 
     # === Цена (из обеих моделей) ===
-    price = models.DecimalField(_('Цена'), max_digits=12, decimal_places=2)
+    price = models.IntegerField(_('Цена'), validators=[MinValueValidator(0)])
     price_currency = models.CharField(
         _('Валюта'),
         max_length=3,
@@ -315,7 +315,7 @@ class CarAd(TimeStampedModel):
         related_name='advertisements',
         verbose_name=_('Город')
     )
-    region = models.CharField(_('Регион'), max_length=100)
+    region = models.CharField(_('Регион'), max_length=100, default='Москва')
 
     # === Статус и статистика (объединяем) ===
     status = models.CharField(
@@ -376,7 +376,55 @@ class CarAd(TimeStampedModel):
     def __str__(self):
         return f'{self.title} - {self.price:,} {self.price_currency}'
 
+    def generate_title(self):
+        """Генерирует заголовок на основе данных автомобиля"""
+        try:
+            # Получаем данные, защищаясь от None
+            brand_name = self.model.brand.name if self.model and self.model.brand else ''
+            model_name = self.model.name if self.model else ''
+            year = self.year if self.year else ''
+            price = self.price if self.price else 0
+
+            # Форматируем цену с разделителями тысяч
+            if price:
+                try:
+                    formatted_price = f"{int(price):,}".replace(',', ' ')
+                except (ValueError, TypeError):
+                    formatted_price = str(price)
+            else:
+                formatted_price = ''
+
+            # Формируем заголовок
+            title_parts = []
+
+            if brand_name:
+                title_parts.append(brand_name)
+            if model_name:
+                title_parts.append(model_name)
+            if year:
+                title_parts.append(str(year))
+
+            # Добавляем "г.в." для года, если нет цены
+            if year and not formatted_price:
+                title_parts.append("г.в.")
+
+            if formatted_price:
+                title_parts.append(f"{formatted_price} ₽")
+
+            result = ' '.join(title_parts) if title_parts else 'Автомобиль'
+
+            # Обрезаем до максимальной длины (200 символов)
+            max_length = 200
+            return result[:max_length]
+        except Exception as e:
+            # На случай ошибки возвращаем заголовок по умолчанию
+            return f"Автомобиль {self.year or ''}"
+
     def save(self, *args, **kwargs):
+        # Генерируем заголовок, если он пустой или содержит только пробелы
+        if not self.title or self.title.strip() == '':
+            self.title = self.generate_title()
+
         # Автоматическое заполнение slug
         if not self.slug:
             base_slug = slugify(f"{self.model.brand.name} {self.model.name} {self.year}")
@@ -410,8 +458,11 @@ class CarAd(TimeStampedModel):
 
         # Обновляем флаг is_new (первые 7 дней)
         from django.utils import timezone
-        days_ago = (timezone.now() - self.created_at).days if self.created_at else 30
-        self.is_new = days_ago < 7
+        if self.created_at:
+            days_ago = (timezone.now() - self.created_at).days
+            self.is_new = days_ago < 7
+        else:
+            self.is_new = True
 
         super().save(*args, **kwargs)
 

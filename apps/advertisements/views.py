@@ -3,7 +3,7 @@ import csv
 import datetime
 import logging
 
-from apps.advertisements.forms import CarAdForm
+from apps.advertisements.forms import CarAdForm, SimpleCarAdForm
 from apps.catalog.models import CarBrand, CarModel, CarFeature
 from apps.advertisements.models import CarAd, CarPhoto, CarAdFeature, FavoriteAd, SearchHistory, CarView
 from apps.users.models import User
@@ -24,7 +24,8 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from datetime import datetime
 
-logger = logging.getLogger(__name__) # Получаем логгер для текущего модуля
+logger = logging.getLogger(__name__)  # Получаем логгер для текущего модуля
+
 
 class CarBrandListView(ListView):
     """Список всех марок автомобилей"""
@@ -879,13 +880,20 @@ class AdvertisementsDetailView(DetailView):
 
 class CarAdCreateView(LoginRequiredMixin, CreateView):
     """Создание нового объявления"""
-    form_class = CarAdForm
+    form_class = SimpleCarAdForm  # CarAdForm - была такая модель
     template_name = 'advertisements/ad_form.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Добавляем список брендов в контекст для JavaScript
         context['brands'] = CarBrand.objects.filter(is_active=True).order_by('name')
+
+        # ДЕБАГ
+        print("=== FORM FIELDS ===")
+        for name, field in context['form'].fields.items():
+            print(f"{name}: {field.__class__.__name__}")
+        print("===================")
+
         return context
 
     def form_valid(self, form):
@@ -921,7 +929,7 @@ class CarAdCreateView(LoginRequiredMixin, CreateView):
         photos = self.request.FILES.getlist('photos')
         for i, photo in enumerate(photos):
             CarPhoto.objects.create(
-                car_ad=self.object,
+                car_ad=self.object,  # ← теперь self.object существует!
                 image=photo,
                 is_main=(i == 0),
                 position=i
@@ -932,6 +940,7 @@ class CarAdCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse_lazy('advertisements:ad_detail', kwargs={'slug': self.object.slug})
+
 
 class AdUpdateView(LoginRequiredMixin, UpdateView):
     """Редактирование объявления для advertisements namespace"""
@@ -1027,33 +1036,45 @@ class FavoriteAdListView(LoginRequiredMixin, ListView):
         return context
 
 
-# class FavoritesView(LoginRequiredMixin, ListView):
-#     """Избранные объявления для advertisements namespace"""
-#     model = FavoriteAd
-#     template_name = 'advertisements/favorites.html'
-#     context_object_name = 'favorites'
-#
-#     def get_queryset(self):
-#         return FavoriteAd.objects.filter(
-#             user=self.request.user
-#         ).select_related('car_ad').order_by('-created_at')
-
-
 @require_POST
 @login_required
 def toggle_favorite(request, ad_id):
     """Добавить/удалить из избранного"""
-    ad = get_object_or_404(CarAd, id=ad_id, is_active=True, status='active')
-    favorite, created = FavoriteAd.objects.get_or_create(
-        user=request.user,
-        car_ad=ad
-    )
+    from apps.advertisements.models import CarAd, FavoriteAd
+    from django.shortcuts import get_object_or_404
 
-    if not created:
-        favorite.delete()
-        return JsonResponse({'status': 'removed'})
+    print(f"=== toggle_favorite START: ad_id={ad_id}, user={request.user} ===")
 
-    return JsonResponse({'status': 'added'})
+    try:
+        # Убираем строгие условия is_active и status для теста
+        ad = get_object_or_404(CarAd, id=ad_id)
+        print(f"Found ad: id={ad.id}, title='{ad.title}', is_active={ad.is_active}, status={ad.status}")
+
+    except CarAd.DoesNotExist:
+        print(f"ERROR: CarAd not found: id={ad_id}")
+        return JsonResponse({'error': 'Объявление не найдено'}, status=404)
+
+    try:
+        # Используем правильное поле 'car_ad'
+        favorite, created = FavoriteAd.objects.get_or_create(
+            user=request.user,
+            car_ad=ad
+        )
+        print(f"FavoriteAd: created={created}, favorite_id={favorite.id}")
+
+        if not created:
+            favorite.delete()
+            print(f"Favorite removed for ad {ad_id}")
+            return JsonResponse({'status': 'removed', 'ad_id': ad_id, 'title': ad.title})
+
+        print(f"Favorite added for ad {ad_id}")
+        return JsonResponse({'status': 'added', 'ad_id': ad_id, 'title': ad.title})
+
+    except Exception as e:
+        print(f"ERROR in FavoriteAd logic: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
@@ -1375,6 +1396,7 @@ def export_ads_csv(request):
 
     return response
 
+
 class FilteredAdListView(ListView):
     """Список объявлений для фильтрации по slug (для filter_patterns)"""
     model = CarAd
@@ -1452,4 +1474,94 @@ def clear_favorites(request):
     return JsonResponse({
         'success': True,
         'deleted_count': deleted_count
+    })
+
+
+def toggle_favorite_test(request, ad_id):
+    return HttpResponse(f"Test OK! ad_id={ad_id}")
+
+
+logger = logging.getLogger(__name__)
+
+
+def debug_ad(request, ad_id):
+    """Функция для отладки - проверяет существование объявления"""
+    try:
+        # Попробуйте разные варианты:
+        from apps.advertisements.models import CarAd
+        ad = CarAd.objects.get(id=ad_id)
+        return JsonResponse({
+            'status': 'found',
+            'ad_id': ad.id,
+            'title': ad.title,
+            'slug': ad.slug,
+            'model_name': 'CarAd'
+        })
+    except Exception as e1:
+        try:
+            # Попробуем другое имя
+            from apps.advertisements.models import Advertisement
+            ad = Advertisement.objects.get(id=ad_id)
+            return JsonResponse({
+                'status': 'found',
+                'ad_id': ad.id,
+                'title': ad.title,
+                'slug': ad.slug,
+                'model_name': 'Advertisement'
+            })
+        except Exception as e2:
+            logger.error(f"Debug: ad_id={ad_id}, CarAd error: {e1}, Advertisement error: {e2}")
+            return JsonResponse({
+                'status': 'not_found',
+                'ad_id': ad_id,
+                'error': f'CarAd: {e1}, Advertisement: {e2}'
+            }, status=404)
+
+
+from django.http import JsonResponse
+
+
+def test_ad_view(request, ad_id):
+    """Простой тест - проверяет доступность пути и существование объявления"""
+    from apps.advertisements.models import CarAd
+
+    # Логируем запрос
+    print(f"=== TEST VIEW CALLED: ad_id={ad_id} ===")
+
+    # Проверяем существование объявления
+    try:
+        ad = CarAd.objects.get(id=ad_id)
+        return JsonResponse({
+            'success': True,
+            'ad_id': ad_id,
+            'title': ad.title,
+            'slug': ad.slug,
+            'exists': True,
+            'message': f'Объявление {ad_id} существует'
+        })
+    except CarAd.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'ad_id': ad_id,
+            'exists': False,
+            'message': f'Объявление {ad_id} не найдено'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'ad_id': ad_id,
+            'error': str(e),
+            'message': f'Ошибка: {e}'
+        }, status=500)
+
+
+def test_toggle_view(request, ad_id):
+    """Тест пути toggle_favorite без проверки авторизации"""
+    print(f"=== TEST TOGGLE PATH: ad_id={ad_id} ===")
+
+    # Просто проверяем что путь доступен
+    return JsonResponse({
+        'path': f'/advertisements/{ad_id}/favorite/toggle/',
+        'ad_id': ad_id,
+        'message': 'Путь доступен'
     })
