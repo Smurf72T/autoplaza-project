@@ -40,5 +40,19 @@
     {% block extra_js %}
         <script src="{% static 'js/filters.js' %}"></script>
     {% endblock %}
+
+    <script>
+    // Глобальные переменные для fallback
+    window.PRELOADED_MODELS = {% if preloaded_models_json %}{{ preloaded_models_json|safe }}{% else %}{}{% endif %};
+    window.MODELS_API_URL = "{% url 'advertisements:api_models_by_brand' %}";
+    window.APP_DEBUG = {% if debug %}true{% else %}false{% endif %};
+
+    // Обработчик глобальных ошибок JavaScript
+    window.addEventListener('error', function(event) {
+        if (window.APP_DEBUG) {
+            console.error('Глобальная ошибка:', event.error);
+        }
+    });
+    </script>
 </body>
 </html>

@@ -1,75 +1,64 @@
 // static/js/dynamic-models.js
-console.log('DynamicModelsLoader loaded');
+// Этот файл используется ТОЛЬКО для страницы фильтров (/advertisements/)
+
+console.log('DynamicModelsLoader for filters loaded');
 
 class DynamicModelsLoader {
     constructor(options = {}) {
         console.log('DynamicModelsLoader initialized with options:', options);
 
-        this.brandSelector = options.brandSelector || '#id_brand';
-        this.modelSelector = options.modelSelector || '#id_model';
-        // Используем относительный путь, так как этот файл статический
+        this.brandSelector = options.brandSelector || '#brand-filter';
+        this.modelSelector = options.modelSelector || '#model-filter';
         this.apiUrl = options.apiUrl || '/advertisements/models-api/';
-        this.initialize();
-    }
 
-    initialize() {
-        console.log('Initializing DynamicModelsLoader...');
-
+        // Проверяем, что это страница фильтров (не форма создания)
         const brandSelect = document.querySelector(this.brandSelector);
         const modelSelect = document.querySelector(this.modelSelector);
 
-        console.log('Brand select found:', brandSelect);
-        console.log('Model select found:', modelSelect);
-
-        if (!brandSelect || !modelSelect) {
-            console.warn('DynamicModelsLoader: brand or model select not found');
-            return;
+        if (brandSelect && modelSelect && !document.getElementById('id_brand')) {
+            // Только если есть элементы фильтров и нет формы создания
+            this.brandSelect = brandSelect;
+            this.modelSelect = modelSelect;
+            this.initialize();
+        } else {
+            console.log('Not a filters page or form creation page detected, skipping initialization');
         }
+    }
 
-        // Сохраняем первоначальное состояние
-        this.originalBrandValue = brandSelect.value;
+    initialize() {
+        console.log('Initializing filters DynamicModelsLoader...');
 
-        brandSelect.addEventListener('change', (event) => {
-            console.log('Brand changed to:', event.target.value);
+        this.brandSelect.addEventListener('change', (event) => {
+            console.log('Brand filter changed to:', event.target.value);
             this.loadModels(event.target.value);
         });
 
-        // Загружаем модели при загрузке страницы, если бренд уже выбран
-        if (brandSelect.value) {
-            console.log('Brand already selected on page load:', brandSelect.value);
+        // Если при загрузке уже выбрана марка
+        if (this.brandSelect.value) {
+            console.log('Brand filter already selected on page load:', this.brandSelect.value);
             setTimeout(() => {
-                this.loadModels(brandSelect.value);
+                this.loadModels(this.brandSelect.value);
             }, 100);
         }
     }
 
     async loadModels(brandId) {
-        console.log('Loading models for brand ID:', brandId);
-
-        const modelSelect = document.querySelector(this.modelSelector);
-        const loadingIndicator = document.getElementById('model-loading');
+        console.log('Loading filter models for brand ID:', brandId);
 
         if (!brandId) {
-            console.log('No brand ID provided, clearing model select');
-            modelSelect.innerHTML = '<option value="">Сначала выберите марку</option>';
-            modelSelect.disabled = true;
+            console.log('No brand ID provided, clearing filter model select');
+            this.modelSelect.innerHTML = '<option value="">Все модели</option>';
+            this.modelSelect.disabled = true;
             return;
         }
 
-        // Показываем индикатор загрузки
-        if (loadingIndicator) {
-            loadingIndicator.style.display = 'block';
-            console.log('Showing loading indicator');
-        }
-
-        modelSelect.disabled = true;
-        modelSelect.innerHTML = '<option value="">Загрузка моделей...</option>';
+        this.modelSelect.disabled = true;
+        this.modelSelect.innerHTML = '<option value="">Загрузка...</option>';
 
         try {
             const url = `${this.apiUrl}?brand_id=${encodeURIComponent(brandId)}`;
-            console.log('Making request to:', url);
+            console.log('Making filter request to:', url);
 
-            const startTime = Date.now();
             const response = await fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -77,68 +66,50 @@ class DynamicModelsLoader {
                 }
             });
 
-            console.log('Response status:', response.status);
-            console.log('Response time:', Date.now() - startTime, 'ms');
+            console.log('Filter response status:', response.status);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            console.log('Response data:', data);
+            console.log('Filter response data:', data);
 
             // Очищаем и заполняем select
-            modelSelect.innerHTML = '<option value="">Выберите модель</option>';
+            this.modelSelect.innerHTML = '<option value="">Все модели</option>';
 
             if (!data || data.length === 0) {
-                console.log('No models found for brand ID:', brandId);
-                modelSelect.innerHTML += '<option value="" disabled>Нет доступных моделей</option>';
+                console.log('No models found for brand filter ID:', brandId);
             } else {
-                console.log(`Found ${data.length} models`);
-                data.forEach((model, index) => {
+                console.log(`Found ${data.length} models for filter`);
+                data.forEach((model) => {
                     const option = document.createElement('option');
                     option.value = model.id;
-                    // Используем только имя модели без марки
                     option.textContent = model.name;
-
-                    // Добавляем data-атрибуты если есть
-                    if (model.year_start) option.dataset.yearStart = model.year_start;
-                    if (model.year_end) option.dataset.yearEnd = model.year_end;
-                    if (model.body_type) option.dataset.bodyType = model.body_type;
-
-                    modelSelect.appendChild(option);
+                    this.modelSelect.appendChild(option);
                 });
             }
 
-            modelSelect.disabled = false;
-
-            // Триггерим событие изменения
-            modelSelect.dispatchEvent(new Event('change'));
+            this.modelSelect.disabled = false;
 
         } catch (error) {
-            console.error('Error loading models:', error);
-            modelSelect.innerHTML = '<option value="">Ошибка загрузки моделей</option>';
-        } finally {
-            // Скрываем индикатор загрузки
-            if (loadingIndicator) {
-                loadingIndicator.style.display = 'none';
-                console.log('Hiding loading indicator');
-            }
+            console.error('Error loading filter models:', error);
+            this.modelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
         }
     }
 }
 
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing DynamicModelsLoader');
+    console.log('DOM loaded, checking for filters...');
 
-    // Проверяем, есть ли на странице поля для загрузки моделей
-    if (document.getElementById('id_brand') && document.getElementById('id_model')) {
+    // Инициализируем только если это страница с фильтрами и НЕ страница формы
+    if (document.getElementById('brand-filter') &&
+        document.getElementById('model-filter') &&
+        !document.getElementById('id_brand')) {
+        console.log('Initializing filters on list page');
         new DynamicModelsLoader();
+    } else {
+        console.log('Not a filters page or form creation page');
     }
 });
-
-// Экспорт для использования в других модулях
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = DynamicModelsLoader;
-}

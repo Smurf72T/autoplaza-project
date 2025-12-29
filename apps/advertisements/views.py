@@ -889,8 +889,19 @@ class CarAdCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        logger.info("Начата обработка формы создания объявления")
-        logger.debug(f"Данные формы: {form.cleaned_data}")
+        logger.info("=== FORM DATA DEBUG ===")
+        logger.info(f"POST data: {self.request.POST}")
+        logger.info(f"Files: {self.request.FILES}")
+        logger.info(f"Form data: {form.cleaned_data}")
+
+        if 'brand' in self.request.POST:
+            brand_id = self.request.POST.get('brand')
+            model_id = self.request.POST.get('model')
+            logger.info(f"Brand from form: {brand_id}")
+            logger.info(f"Model from form: {model_id}")
+
+        # logger.info("Начата обработка формы создания объявления")
+        # logger.debug(f"Данные формы: {form.cleaned_data}")
 
         form.instance.owner = self.request.user
         form.instance.owner_type = 'private' if not hasattr(self.request.user, 'dealer') else 'dealer'
@@ -1071,20 +1082,29 @@ def api_models_by_brand(request):
     brand_id = request.GET.get('brand_id')
     brand_slug = request.GET.get('brand')
 
+    print(f"=== API CALL ===")
+    print(f"Brand ID from request: {brand_id}")
+    print(f"Brand Slug from request: {brand_slug}")
+
     if not brand_id and not brand_slug:
+        print("No brand_id or brand_slug provided")
         return JsonResponse([], safe=False)
 
     try:
         models_qs = CarModel.objects.filter(is_active=True)
 
         if brand_id:
+            print(f"Looking for brand by ID: {brand_id}")
             # Пытаемся получить бренд по ID
             try:
                 brand = CarBrand.objects.get(id=brand_id, is_active=True)
+                print(f"Found brand: {brand.name} (ID: {brand.id})")
                 models_qs = models_qs.filter(brand=brand)
             except (ValueError, CarBrand.DoesNotExist):
+                print(f"Brand not found by ID: {brand_id}")
                 return JsonResponse([], safe=False)
         elif brand_slug:
+            print(f"Looking for brand by slug: {brand_slug}")
             # Получаем бренд по slug
             try:
                 brand = CarBrand.objects.get(slug=brand_slug, is_active=True)
@@ -1094,6 +1114,7 @@ def api_models_by_brand(request):
 
         # Получаем данные
         models = models_qs.order_by('name')
+        print(f"Found {models.count()} models")
 
         data = []
         for model in models:
@@ -1101,8 +1122,7 @@ def api_models_by_brand(request):
                 'id': model.id,
                 'slug': model.slug,
                 'name': model.name,
-                # УБИРАЕМ full_name, оставляем только имя модели
-                'full_name': model.name  # Теперь только имя модели, без марки
+                'full_name': model.name
             }
 
             # Добавляем опциональные поля только если они есть
@@ -1115,9 +1135,11 @@ def api_models_by_brand(request):
 
             data.append(model_data)
 
+        print(f"Returning {len(data)} models")
         return JsonResponse(data, safe=False)
 
     except Exception as e:
+        print(f"API Error: {str(e)}")
         logger.error(f"Ошибка в api_models_by_brand: {str(e)}", exc_info=True)
         return JsonResponse(
             {'error': 'Internal server error', 'message': str(e)},
