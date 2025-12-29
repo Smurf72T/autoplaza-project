@@ -320,7 +320,7 @@ class CarAdForm(forms.ModelForm):
             'price': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '0',
-                'step': '1000'
+                # 'step': '1000'
             }),
             'city': forms.TextInput(attrs={
                 'class': 'form-control',
